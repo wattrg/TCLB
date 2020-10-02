@@ -400,6 +400,83 @@ CudaDeviceFunction real_t interp(real_t current, real_t upper, real_t lower){
 }
 #endif
 
+//  FERROFLUIDIC UPDATE
+#ifdef OPTIONS_ferro
+CudaDeviceFunction void FerroCopy(){
+    // Save everything from buffer 1 to 2.
+    g0  = g0(0,0,0);
+    g1  = g1(0,0,0);
+    g2  = g2(0,0,0);
+    g3  = g3(0,0,0);
+    g4  = g4(0,0,0);
+    g5  = g5(0,0,0);
+    g6  = g6(0,0,0);
+    g7  = g7(0,0,0);
+    g8  = g8(0,0,0);
+    g9  = g9(0,0,0);
+    g10 = g10(0,0,0);
+    g11 = g11(0,0,0);
+    g12 = g12(0,0,0);
+    g13 = g13(0,0,0);
+    g14 = g14(0,0,0);
+    g15 = g15(0,0,0);
+    g16 = g16(0,0,0);
+    g17 = g17(0,0,0);
+    g18 = g18(0,0,0);
+    g19 = g19(0,0,0);
+    g20 = g20(0,0,0);
+    g21 = g21(0,0,0);
+    g22 = g22(0,0,0);
+    g23 = g23(0,0,0);
+    g24 = g24(0,0,0);
+    g25 = g25(0,0,0);
+    g26 = g26(0,0,0);
+
+    h0 = h0(0,0,0);
+    h1 = h1(0,0,0);
+    h2 = h2(0,0,0);
+    h3 = h3(0,0,0);
+    h4 = h3(0,0,0);
+    h5 = h4(0,0,0);
+    h6 = h5(0,0,0);
+    h7 = h7(0,0,0);
+    h8 = h8(0,0,0);
+    h9 = h9(0,0,0);
+    h10 = h10(0,0,0);
+    h11 = h11(0,0,0);
+    h12 = h12(0,0,0);
+    h13 = h13(0,0,0);
+    h14 = h14(0,0,0);
+
+    U = U(0,0,0);
+    V = V(0,0,0);
+    W = W(0,0,0);
+
+    nw_x = nw_x(0,0,0);
+    nw_y = nw_y(0,0,0);
+    nw_z = nw_z(0,0,0);
+
+    PhaseF = PhaseF(0,0,0);
+
+    Psi = Psi(0,0,0); 
+}
+
+CudaDeviceFunction void MagneticCopy(){
+    Psi = Psi(0,0,0); 
+}
+
+CudaDeviceFunction void FerroFinitedifference(){
+	PhaseF = PhaseF(0,0,0);
+    if ( IamWall || IamSolid || ((NodeType & NODE_ADDITIONALS) == NODE_ConstantPsi) ) {
+        //TODO: Build in your boundary conditions here
+	Psi = Psi(0,0,0);
+	} else {
+	//TODO: Build in your update of the magnetic field here
+	
+	}
+}
+#endif
+
 // 	HELPER FUNCTIONS:
 CudaDeviceFunction vector_t calcGradPhi(){
 	vector_t gradPhi = {0.0,0.0,0.0};
@@ -584,6 +661,10 @@ CudaDeviceFunction void Init() {
 		}
 		Cond = interp(PhaseF, k_h, k_l);
 	#endif											
+	#ifdef OPTIONS_ferro
+		//TODO: Define initialisation options for ferrofluid
+
+	#endif
 	// Pre-defined Initialisation patterns:
 	// Diffuse interface sphere
 	   // BubbleType = -1 refers to light fluid bubble.
@@ -732,6 +813,10 @@ CudaDeviceFunction void Init_distributions(){
 	#ifdef OPTIONS_thermo
 		Temp   = Temp(0,0,0);
 		Cond   = interp(PhaseF, k_h, k_l);
+	#endif
+	#ifdef OPTIONS_ferro
+		//TODO: save fields relating to ferrofluid
+		Psi = Psi(0,0,0);
 	#endif
 	#ifdef OPTIONS_OutFlow
 			if ((NodeType & NODE_BOUNDARY) == NODE_EConvect){
@@ -925,11 +1010,17 @@ CudaDeviceFunction void CollisionMRT(){
 		F_surf[1] = mu * gradPhi.y;
 		F_surf[2] = mu * gradPhi.z;
 	#endif
-
+	#ifdef OPTIONS_ferro
+		//TODO: calculate the magnetic force
+		real_t F_mag[3];
+		F_mag[0] =0.0;
+		F_mag[1] =0.0;
+		F_mag[2] =0.0;
+	#endif
 	//  Viscous Force:
 	//	1. determine stress tensor
 	//	2. from this determine F_mu
-	//  3. and then compile total force - iterate through to update velocity
+	//      3. and then compile total force - iterate through to update velocity
 	//	   and redetermine stress to ensure more accurate F_total
 	for (j=0;j<2;j++) {
 	<?R
@@ -948,10 +1039,16 @@ CudaDeviceFunction void CollisionMRT(){
 		F_mu[0] = (0.5-tau) * (Density_h-Density_l) * (stress[0]*gradPhi.x + stress[1]*gradPhi.y + stress[2]*gradPhi.z);
 		F_mu[1] = (0.5-tau) * (Density_h-Density_l) * (stress[1]*gradPhi.x + stress[3]*gradPhi.y + stress[4]*gradPhi.z);
 		F_mu[2] = (0.5-tau) * (Density_h-Density_l) * (stress[2]*gradPhi.x + stress[4]*gradPhi.y + stress[5]*gradPhi.z);
-		F_total[0] = F_surf[0] + F_pressure[0] + F_body[0] + F_mu[0];
-		F_total[1] = F_surf[1] + F_pressure[1] + F_body[1] + F_mu[1];
-		F_total[2] = F_surf[2] + F_pressure[2] + F_body[2] + F_mu[2];
-
+		
+		#ifdef OPTIONS_ferro
+			F_total[0] = F_surf[0] + F_pressure[0] + F_body[0] + F_mu[0] + F_mag[0];
+			F_total[1] = F_surf[1] + F_pressure[1] + F_body[1] + F_mu[1] + F_mag[1];
+			F_total[2] = F_surf[2] + F_pressure[2] + F_body[2] + F_mu[2] + F_mag[2];
+		#else
+			F_total[0] = F_surf[0] + F_pressure[0] + F_body[0] + F_mu[0];
+			F_total[1] = F_surf[1] + F_pressure[1] + F_body[1] + F_mu[1];
+			F_total[2] = F_surf[2] + F_pressure[2] + F_body[2] + F_mu[2];
+		#endif
 	<?R 	C( u, m0[2:4] + 0.5 * F_total * rho.inv) ?>
 	}
 	// PHASE FIELD POPULATION UPDATE:

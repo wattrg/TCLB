@@ -67,7 +67,7 @@ if (Options$OutFlow){
 	AddField(name="U",dx=c(-1,0,0))
 }
 
-if (Options$thermo){
+if (Options$thermo || Options$ferro){
 	AddField( name="g0" , group="g")
 	AddField( name="g1" , group="g")
 	AddField( name="g2" , group="g")
@@ -110,6 +110,8 @@ if (Options$thermo){
 	AddField( name="h12",group="h")
 	AddField( name="h13",group="h")
 	AddField( name="h14",group="h")
+}
+if (Options$thermo){
 # Temperature Related alterations
 	AddDensity("Temp", dx=0, dy=0, dz=0, group="Thermal")
 	AddDensity("Cond", dx=0, dy=0, dz=0, group="Thermal")
@@ -162,6 +164,14 @@ if (Options$thermo){
 	AddNodeType("EAdiabatic",group="ADDITIONALS")
 }
 
+if (Options$ferro){
+	AddDensity("Psi", dx=0, dy=0, dz=0, group="Ferrofluid")
+	AddField("Psi",stencil3d=1, group="Ferrofluid")
+	AddStage("CopyDistributions", "FerroCopy",  save=Fields$group %in% c("g","h","Vel","nw", "PF","Ferrofluid"))
+	AddStage("CopyFerrofluid","MagneticCopy", save=Fields$name %in% c("Psi"), load=DensityAll$name %in% c("Psi"))
+	AddStage("Finitedifference", "FerroFinitedifference", save=Fields$name=="Psi", load=DensityAll$name %in% c("U","V","W","PhaseF","Psi"))
+}
+
 AddSetting("HEIGHT", default="0",	comment="Height of channel for 2D Poiseuille flow")
 AddSetting("Uavg", default="0",	zonal=T, comment="Average velocity of channel for 2D Poiseuille flow")
 AddSetting("developedFlow", default="0",	comment="set greater than 0 for fully developed flow in the domain (x-direction)")
@@ -190,6 +200,13 @@ if (Options$OutFlow & Options$thermo){
 					                             load=DensityAll$group %in% c("g","h","Vel","nw") )
     AddStage("BaseIter"  , "Run"       ,         save=Fields$group %in% c("g","h","Vel","nw","Thermal"), 
 	                                	         load=DensityAll$group %in% c("g","h","Vel","nw","Thermal","PF"))
+} else if (Options$ferro){
+    AddStage("PhaseInit" , "Init", save=Fields$group %in% c("PF","Ferrofluid") )
+    AddStage("BaseInit"  , "Init_distributions", save=Fields$group %in% c("g","h","Vel","PF"))
+    AddStage("calcPhase" , "calcPhaseF",	     save=Fields$name=="PhaseF", 
+					                             load=DensityAll$group %in% c("g","h","Vel","nw") )
+    AddStage("BaseIter"  , "Run"       ,         save=Fields$group %in% c("g","h","Vel","nw","Ferrofluid"), 
+	                                	         load=DensityAll$group %in% c("g","h","Vel","nw","Ferrofluid","PF"))
 } else {
     AddStage("PhaseInit" , "Init", save=Fields$name=="PhaseF")
     AddStage("BaseInit"  , "Init_distributions", save=Fields$group %in% c("g","h","Vel","PF"))
@@ -202,6 +219,11 @@ if (Options$thermo){
 	AddAction("TempToSteadyState", c("CopyDistributions","RK_1", "RK_2", "RK_3", "RK_4","NonLocalTemp"))
 	AddAction("Iteration", c("BaseIter", "calcPhase", "calcWall","RK_1", "RK_2", "RK_3", "RK_4","NonLocalTemp"))
 	AddAction("IterationConstantTemp", c("BaseIter", "calcPhase", "calcWall","CopyThermal"))
+	AddAction("Init"     , c("PhaseInit","WallInit" , "calcWall","BaseInit"))
+} else if (Options$ferro){
+	AddAction("FerroToSteadyState", c("CopyDistributions","Finitedifference"))
+	AddAction("Iteration", c("BaseIter", "calcPhase", "calcWall","Finitedifference"))
+	AddAction("IterationConstantFerro", c("BaseIter", "calcPhase", "calcWall","CopyFerrofluid"))
 	AddAction("Init"     , c("PhaseInit","WallInit" , "calcWall","BaseInit"))
 } else {
 	AddAction("Iteration", c("BaseIter", "calcPhase", "calcWall"))
