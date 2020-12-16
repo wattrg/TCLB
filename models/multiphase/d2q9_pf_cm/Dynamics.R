@@ -104,6 +104,8 @@ AddSetting(name="CenterX", default="0", comment='Circle center x-coord')
 AddSetting(name="CenterY", default="0", comment='Circle Center y-coord')
 AddSetting(name="BubbleType", default="1", comment='Drop/bubble')
 
+AddSetting(name="diffusion_coeff", default="0.005", comment='Pure diffusion eq is used to smooth out the initial phase field ditribution') # TODO
+
 #	Inputs: For phasefield evolution
 AddSetting(name="Density_h", comment='High density fluid')
 AddSetting(name="Density_l", comment='Low  density fluid')
@@ -130,74 +132,74 @@ AddSetting(name="bulk_visc", omega_bulk='1.0/(3*bulk_visc+0.5)',  comment='bulk 
 #	Inputs: Flow Properties
 AddSetting(name="VelocityX", default=0.0, comment='inlet/outlet/init velocity', zonal=T)
 AddSetting(name="VelocityY", default=0.0, comment='inlet/outlet/init velocity', zonal=T)
+AddSetting(name="pipe_diameter", default=0.0, comment='use for parabolic velocity profiles', zonal=T)
+AddSetting(name="u_movingFrame", default=0.0, comment='poiseuille flow with moving reference', zonal=T)
 AddSetting(name="Pressure" , default=0.0, comment='inlet/outlet/init density', zonal=T)
-AddSetting(name="GravitationX", default=0.0, comment='applied (rho)*GravitationX', zonal=T)
-AddSetting(name="GravitationY", default=0.0, comment='applied (rho)*GravitationY', zonal=T)
+AddSetting(name="GravitationX", default=0.0, comment='applied (rho)*GravitationX')
+AddSetting(name="GravitationY", default=0.0, comment='applied (rho)*GravitationY')
 AddSetting(name="BuoyancyX", default=0.0, comment='applied (rho-rho_h)*BuoyancyX')
 AddSetting(name="BuoyancyY", default=0.0, comment='applied (rho-rho_h)*BuoyancyY')
-AddSetting(name="fixedIterator", default=2.0, comment='fixed iterator for velocity calculation')
+
 #	Globals - table of global integrals that can be monitored and optimized
 AddGlobal(name="PressureLoss", comment='pressure loss', unit="1mPa")
 AddGlobal(name="OutletFlux", comment='pressure loss', unit="1m2/s")
 AddGlobal(name="InletFlux", comment='pressure loss', unit="1m2/s")
 AddGlobal(name="TotalDensity", comment='Mass conservation check', unit="1kg/m3")
-AddNodeType(name="SpikeTrack", group="ADDITIONALS")
-AddNodeType(name="BubbleTrack", group="ADDITIONALS")
-AddGlobal(name="RTIBubble", comment='Bubble Tracker', op="MAX")
-AddGlobal(name="RTISpike",  comment='Spike Tracker', op="MAX")
-AddGlobal(name="NMovingWallForce", comment='force exerted on the N Moving Wall')
-AddGlobal(name="NMovingWallPower", comment='implented: Vx* incoming momentum (precollision)')
 
-AddGlobal(name="BubbleVelocityX", comment='Bubble velocity in the x direction')
-AddGlobal(name="BubbleVelocityY", comment='Bubble velocity in the y direction')
-AddGlobal(name="BubbleVelocityZ", comment='Bubble velocity in the z direction')
-AddGlobal(name="BubbleLocationY", comment='Bubble Location in the y direction')
-AddGlobal(name="SumPhiGas", comment='Summation of (1-phi) in all gas cells')
+AddNodeType(name="SpikeTrack",group="ADDITIONALS")
+AddNodeType(name="BubbleTrack",group="ADDITIONALS")
+AddGlobal(name="RTIBubble", comment='Bubble Tracker')
+AddGlobal(name="RTISpike",  comment='Spike Tracker')
 
-if (Options$debug){
-	AddGlobal(name="MomentumX", comment='Total momentum in the domain', unit="")
-	AddGlobal(name="MomentumY", comment='Total momentum in the domain', unit="")
-	AddGlobal(name="MomentumX_afterCol", comment='Total momentum in the domain', unit="")
-	AddGlobal(name="MomentumY_afterCol", comment='Total momentum in the domain', unit="")
+AddGlobal("NMovingWallForce")
+AddGlobal("NMovingWallPower")
 
-	AddGlobal(name="F_pressureX", comment='Pressure force X', unit="")
-	AddGlobal(name="F_pressureY", comment='Pressure force Y', unit="")
-	AddGlobal(name="F_bodyX", comment='Body force X', unit="")
-	AddGlobal(name="F_bodyY", comment='Body force Y', unit="")
-	AddGlobal(name="F_surf_tensionX", comment='Surface tension force X', unit="")
-	AddGlobal(name="F_surf_tensionY", comment='Surface tension force Y', unit="")
-	AddGlobal(name="F_muX", comment='Viscous tension force X', unit="")
-	AddGlobal(name="F_muY", comment='Viscous tension force Y', unit="")
-	AddGlobal(name="F_total_hydroX", comment='Total hydrodynamic force X', unit="")
-	AddGlobal(name="F_total_hydroY", comment='Total hydrodynamic force Y', unit="")
+AddGlobal("WallForceMeasure")  # experimental
+AddGlobal("CountCells") # experimental
+AddGlobal("TestCounter") # experimental
 
-	AddGlobal(name="F_phiX", comment='Forcing term for interface tracking X', unit="")
-	AddGlobal(name="F_phiY", comment='Forcing term for interface tracking Y', unit="")
-}
-#	Node things
-if (Options$CM){
-	AddNodeType(name="CM", group="COLLISION")  # Central Moments collision
-}
-AddNodeType(name="Smoothing", group="ADDITIONALS")  #  To smooth phase field interface during initialization.
+AddNodeType("CM","COLLISION")  # Central Moments collision
 
 #	Boundary things
 AddNodeType(name="MovingWall_N", group="BOUNDARY")
 AddNodeType(name="MovingWall_S", group="BOUNDARY")
 AddNodeType(name="NVelocity", group="BOUNDARY")
+AddNodeType(name="SVelocity", group="BOUNDARY")
 AddNodeType(name="WVelocity", group="BOUNDARY")
+AddNodeType(name="EVelocity", group="BOUNDARY")
+AddNodeType(name="WVelocity_parabolic", group="BOUNDARY")
+AddNodeType(name="EVelocity_parabolic", group="BOUNDARY")
 
-AddNodeType(name="Body", group="BODY")  # To measure force exerted on the body.
+AddNodeType(name="Smoothing", group="ADDITIONALS")
+AddNodeType("Body", "BODY")
 
 AddGlobal(name="FDrag", comment='Force exerted on body in X-direction', unit="N")
 AddGlobal(name="FLift", comment='Force exerted on body in Y-direction', unit="N")
 AddGlobal(name="FTotal", comment='Force exerted on body in X+Y -direction', unit="N")
+
+AddGlobal(name="MomentumX", comment='Total momentum in the domain', unit="")
+AddGlobal(name="MomentumY", comment='Total momentum in the domain', unit="")
+AddGlobal(name="MomentumX_afterCol", comment='Total momentum in the domain', unit="")
+AddGlobal(name="MomentumY_afterCol", comment='Total momentum in the domain', unit="")
+
+
+AddGlobal(name="F_pressureX", comment='Pressure force X', unit="")
+AddGlobal(name="F_pressureY", comment='Pressure force Y', unit="")
+AddGlobal(name="F_bodyX", comment='Body force X', unit="")
+AddGlobal(name="F_bodyY", comment='Body force Y', unit="")
+AddGlobal(name="F_surf_tensionX", comment='Surface tension force X', unit="")
+AddGlobal(name="F_surf_tensionY", comment='Surface tension force Y', unit="")
+AddGlobal(name="F_muX", comment='Viscous tension force X', unit="")
+AddGlobal(name="F_muY", comment='Viscous tension force Y', unit="")
+AddGlobal(name="F_total_hydroX", comment='Total hydrodynamic force X', unit="")
+AddGlobal(name="F_total_hydroY", comment='Total hydrodynamic force Y', unit="")
+
+AddGlobal(name="F_phiX", comment='Forcing term for interface tracking X', unit="")
+AddGlobal(name="F_phiY", comment='Forcing term for interface tracking Y', unit="")
 
 if (Options$Outflow) {
 	AddNodeType(name="Convective_E", group="BOUNDARY")
 	AddNodeType(name="Convective_N", group="BOUNDARY")
 	AddNodeType(name="Neumann_E", group="BOUNDARY")
 }
-AddNodeType(name="Solid", group="BOUNDARY")
-AddNodeType(name="Wall", group="BOUNDARY")
-AddNodeType(name="BGK", group="COLLISION")
-AddNodeType(name="MRT", group="COLLISION")
+
