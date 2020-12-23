@@ -46,7 +46,33 @@ if (Options$Outflow){
 	AddField('V',dx=c(0,-1))
 }
 
-#	Stages - processes to run for initialisation and each iteration
+#add fields for ferrofluid
+if (Options$ferro) {
+	AddField( name="g[0]", group="g")
+	AddField( name="g[1]", group="g")
+	AddField( name="g[2]", group="g")
+	AddField( name="g[3]", group="g")
+	AddField( name="g[4]", group="g")
+	AddField( name="g[5]", group="g")
+	AddField( name="g[6]", group="g")
+	AddField( name="g[7]", group="g")
+	AddField( name="g[8]", group="g")
+
+	AddField( name="h[0]", group="h")
+	AddField( name="h[1]", group="h")
+	AddField( name="h[2]", group="h")
+	AddField( name="h[3]", group="h")
+	AddField( name="h[4]", group="h")
+	AddField( name="h[5]", group="h")
+	AddField( name="h[6]", group="h")
+	AddField( name="h[7]", group="h")
+	AddField( name="h[8]", group="h")
+
+	AddDensity("Psi", dx=0, dy=0, group="Ferrofluid")
+	AddField("Psi",stencil2d=1, group="Ferrofluid")
+}
+
+# Stages - processes to run for initialisation and each iteration
 if (Options$RT) {
  	AddField('PhaseOld', group="PF")
 
@@ -60,18 +86,27 @@ if (Options$RT) {
     AddStage("PhaseIter" , "calcPhaseFIter"		, save=Fields$name  %in% c("PhaseF","PhaseOld") , load=DensityAll$group=="h")
   	AddStage("WallIter"  , "calcWallPhaseIter"  , save=Fields$group %in% c("PF")				, load=DensityAll$group=="nw") 
 } else if (Options$Outflow) {
-
 	# initialisation
-	AddStage("PhaseInit" , "Init_phase"			, save=Fields$group %in% c("PF"))
-	AddStage("WallInit"  , "Init_wallNorm"		, save=Fields$group %in% c("nw"))
-	AddStage("BaseInit"  , "Init_distributions"	, save=Fields$group %in% c("g","h","Vel","gold","hold")) 
+	AddStage("PhaseInit" , "Init_phase", save=Fields$group %in% c("PF"))
+	AddStage("WallInit"  , "Init_wallNorm", save=Fields$group %in% c("nw"))
+	AddStage("BaseInit"  , "Init_distributions", save=Fields$group %in% c("g","h","Vel","gold","hold")) 
 	# iteration
-	AddStage("BaseIter"  , "calcHydroIter"      , save=Fields$group %in% c("g","h","Vel","nw","gold","hold"), 
-												  load=DensityAll$group %in% c("g","h","Vel","nw","gold","hold")) 
-	AddStage("PhaseIter" , "calcPhaseFIter"		, save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("g","h","Vel","nw","gold","hold"))
-	AddStage("WallIter"  , "calcWallPhaseIter"	, save=Fields$group %in% c("PF"), load=DensityAll$group=="nw")	
+	AddStage("BaseIter"  , "calcHydroIter", save=Fields$group %in% c("g","h","Vel","nw","gold","hold"), load=DensityAll$group %in% c("g","h","Vel","nw","gold","hold")) 
+	AddStage("PhaseIter" , "calcPhaseFIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("g","h","Vel","nw","gold","hold"))
+	AddStage("WallIter"  , "calcWallPhaseIter", save=Fields$group %in% c("PF"), load=DensityAll$group=="nw")	
+} else if (Options$ferro) {
+	# initialisation
+	AddStage("PhaseInit" , "Init_phase", save=Fields$group %in% c("PF"))
+	AddStage("WallInit"  , "Init_wallNorm", save=Fields$group %in% c("nw"))
+	AddStage("BaseInit"  , "Init_distributions", save=Fields$group %in% c("g","h","Vel"))
+	AddStage("CopyDistributions", "FerroCopy", save=Fields$group %in% c("g","h","Vel","nw","PF","Ferrofluid"))
+
+	# iteration
+	AddStage("BaseIter"  , "calcHydroIter", save=Fields$group %in% c("g","h","Vel","nw") , load=DensityAll$group %in% c("g","h","Vel","nw"))  # TODO: is nw needed here?
+	AddStage("PhaseIter" , "calcPhaseFIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("g","h","Vel","nw"))
+	AddStage("WallIter", "calcWallPhaseIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("nw"))	
+	AddStage("MagPoisson", "MagPoisson", save=Fields$name %in% c("Psi"), load=DensityAll$name %in% c("Psi", "PF"))
 } else {
-	
 	# initialisation
 	AddStage("PhaseInit" , "Init_phase"			, save=Fields$group %in% c("PF"))
 	AddStage("WallInit"  , "Init_wallNorm"		, save=Fields$group %in% c("nw"))
@@ -83,8 +118,17 @@ if (Options$RT) {
 	AddStage("WallIter"  , "calcWallPhaseIter"	, save=Fields$group %in% c("PF")			   , load=DensityAll$group %in% c("nw"))	
 }
 
-AddAction("Iteration", c("BaseIter", "PhaseIter","WallIter"))
-AddAction("Init"     , c("PhaseInit","WallInit", "WallIter","BaseInit"))
+# actions
+if (Options$ferro){
+	AddAction("MagToSteadyState", c("CopyDistributions", "MagPoisson"))
+	AddAction("Iteration", c("BaseIter", "calcPhase", "calcWall", "MagPoisson"))
+	AddAction("IterationConstantFerro", c("BaseITer", "calcPhase", "calcWall", "CopyFerrofluid"))
+	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter"))
+	AddAction("Init", c("PhaseInit", "WallInit", "WallIter", "BaseInit"))
+} else{
+	AddAction("Iteration", c("BaseIter", "PhaseIter","WallIter"))
+	AddAction("Init"     , c("PhaseInit","WallInit", "WallIter","BaseInit"))
+}
 
 # 	Outputs:
 AddQuantity(name="Rho",	  unit="kg/m3")
@@ -93,6 +137,11 @@ AddQuantity(name="U",	  unit="m/s",vector=T)
 AddQuantity(name="NormalizedPressure",	  unit="Pa")
 AddQuantity(name="Pressure",	  unit="Pa")
 AddQuantity(name="Normal", unit="1", vector=T)
+
+if (Options$ferro) {
+	AddQuantity(name="B", unit="T",vector=T, comment="magnetic flux density")
+	AddQuantity(name="H", unit="A/m", vector=T, comment="magnetic field intensity")
+}
 
 #	Initialisation States
 AddSetting(name="Period", default="0", comment='Number of cells per cos wave')
