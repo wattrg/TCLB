@@ -68,8 +68,13 @@ if (Options$ferro) {
 	AddField( name="h[7]", group="h")
 	AddField( name="h[8]", group="h")
 
-	AddDensity("Psi", dx=0, dy=0, group="Ferrofluid")
-	AddField("Psi",stencil2d=1, group="Ferrofluid")
+	AddDensity("Psi_old", dx=0, dy=0, group="Ferrofluid")
+	AddField("Psi_old",stencil2d=1, group="Ferrofluid")
+	AddDensity("Psi_new", dx=0, dy=0, group="Ferrofluid")
+	AddField("Psi_new",stencil2d=1, group="Ferrofluid")
+
+	AddDensity("LapPsiSource", dx=0, dy=0, group="Ferrofluid")
+	AddField("LapPsiSource", group="Ferrofluid") 
 }
 
 # Stages - processes to run for initialisation and each iteration
@@ -98,19 +103,20 @@ if (Options$RT) {
 	# initialisation
 	AddStage("PhaseInit" , "Init_phase", save=Fields$group %in% c("PF"))
 	AddStage("WallInit"  , "Init_wallNorm", save=Fields$group %in% c("nw"))
-	AddStage("BaseInit"  , "Init_distributions", save=Fields$group %in% c("g","h","Vel"))
+	AddStage("BaseInit"  , "Init_distributions", save=Fields$group %in% c("g","h","Vel","Ferrofluid"))
 	AddStage("CopyDistributions", "FerroCopy", save=Fields$group %in% c("g","h","Vel","nw","PF","Ferrofluid"))
-
 	# iteration
 	AddStage("BaseIter"  , "calcHydroIter", save=Fields$group %in% c("g","h","Vel","nw") , load=DensityAll$group %in% c("g","h","Vel","nw"))  # TODO: is nw needed here?
 	AddStage("PhaseIter" , "calcPhaseFIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("g","h","Vel","nw"))
 	AddStage("WallIter", "calcWallPhaseIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("nw"))	
-	AddStage("MagPoisson", "MagPoisson", save=Fields$name %in% c("Psi"), load=DensityAll$name %in% c("Psi", "PF"))
+	AddStage("PsiSource", "calcPsiSource", save=Fields$group %in% c("Ferrofluid"), load=DensityAll$group %in% c("Ferrofluid"))
+	AddStage("MagPoisson", "MagPoisson", save=Fields$name %in% c("Psi_old", "Psi_new"), load=DensityAll$name %in% c("Psi_old", "Psi_new", "PF", "LapPsiSource"))
+	AddStage("FinishMag", "FinaliseMagUpdate", save=Fields$name %in% c("Psi_old", "Psi_new"), load=DensityAll$name %in% c("Psi_old", "Psi_new"))
 } else {
 	# initialisation
-	AddStage("PhaseInit" , "Init_phase"			, save=Fields$group %in% c("PF"))
-	AddStage("WallInit"  , "Init_wallNorm"		, save=Fields$group %in% c("nw"))
-	AddStage("BaseInit"  , "Init_distributions" , save=Fields$group %in% c("g","h","Vel"))
+	AddStage("PhaseInit" , "Init_phase", save=Fields$group %in% c("PF"))
+	AddStage("WallInit"  , "Init_wallNorm", save=Fields$group %in% c("nw"))
+	AddStage("BaseInit"  , "Init_distributions", save=Fields$group %in% c("g","h","Vel"))
 
 	# iteration
 	AddStage("BaseIter"  , "calcHydroIter"      , save=Fields$group %in% c("g","h","Vel","nw") , load=DensityAll$group %in% c("g","h","Vel","nw"))  # TODO: is nw needed here?
@@ -120,8 +126,8 @@ if (Options$RT) {
 
 # actions
 if (Options$ferro){
-	AddAction("MagToSteadyState", c("CopyDistributions", "MagPoisson"))
-	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", "MagPoisson"))
+	#AddAction("MagToSteadyState", c("PsiSource", "MagPoisson"))
+	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", "PsiSource", "MagPoisson", "MagPoisson", "MagPoisson", "FinishMag", "CopyDistributions"))
 	AddAction("IterationConstantFerro", c("BaseIter", "PhaseIter", "WallIter", "CopyDistributions"))
 	AddAction("Init", c("PhaseInit", "WallInit", "WallIter", "BaseInit"))
 } else{
@@ -140,6 +146,8 @@ AddQuantity(name="Normal", unit="1", vector=T)
 if (Options$ferro) {
 	AddQuantity(name="B", unit="T",vector=T, comment="magnetic flux density")
 	AddQuantity(name="H", unit="A/m", vector=T, comment="magnetic field intensity")
+	AddQuantity(name="mu", unit="H/m", comment="magnetic permeability")
+	AddQuantity(name="Psi", unit="A", comment="magnetic potential")
 }
 
 #	Initialisation States
@@ -183,6 +191,17 @@ AddSetting(name="GravitationX", default=0.0, comment='applied (rho)*GravitationX
 AddSetting(name="GravitationY", default=0.0, comment='applied (rho)*GravitationY', zonal=T)
 AddSetting(name="BuoyancyX", default=0.0, comment='applied (rho-rho_h)*BuoyancyX')
 AddSetting(name="BuoyancyY", default=0.0, comment='applied (rho-rho_h)*BuoyancyY')
+
+
+#	Inputs: ferrofluid parameters
+if (Options$ferro) {
+	AddSetting(name="relaxation", default=0.4, comment="relaxation parameter for self correcting procedure")
+	AddSetting(name="mu_1", default=0.0, comment="magnetic permeability of first phase")
+	AddSetting(name="mu_2", default=0.0, comment="magnetic permeability of second phase")
+	AddSetting(name="Hx_far", default=0.0, comment="far field magnetic intensity")
+	AddSetting(name="Hy_far", default=0.0, comment="far field magnetic intensity")
+}
+
 AddSetting(name="fixedIterator", default=2.0, comment='fixed iterator for velocity calculation')
 #	Globals - table of global integrals that can be monitored and optimized
 AddGlobal(name="PressureLoss", comment='pressure loss', unit="1mPa")
@@ -201,6 +220,7 @@ AddGlobal(name="BubbleVelocityY", comment='Bubble velocity in the y direction')
 AddGlobal(name="BubbleVelocityZ", comment='Bubble velocity in the z direction')
 AddGlobal(name="BubbleLocationY", comment='Bubble Location in the y direction')
 AddGlobal(name="SumPhiGas", comment='Summation of (1-phi) in all gas cells')
+
 
 if (Options$debug){
 	AddGlobal(name="MomentumX", comment='Total momentum in the domain', unit="")
@@ -233,6 +253,13 @@ AddNodeType(name="MovingWall_N", group="BOUNDARY")
 AddNodeType(name="MovingWall_S", group="BOUNDARY")
 AddNodeType(name="NVelocity", group="BOUNDARY")
 AddNodeType(name="WVelocity", group="BOUNDARY")
+
+if (Options$ferro) {
+	AddNodeType(name="North", group="MAGFARFIELD")
+	AddNodeType(name="South", group="MAGFARFIELD")
+	AddNodeType(name="East", group="MAGFARFIELD")
+	AddNodeType(name="West", group="MAGFARFIELD")
+}
 
 AddNodeType(name="Body", group="BODY")  # To measure force exerted on the body.
 
