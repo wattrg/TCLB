@@ -403,7 +403,7 @@ CudaDeviceFunction void Init_distributions(){
 
 	#ifdef OPTIONS_ferro
 		Psi_new = Psi_new(0,0);
-		LapPsiSource = LapPsiSource(0,0);
+		LapPsiSource = LapPsiSource;
 		Psi_old = Psi_new(0,0);
 	#endif
 
@@ -1184,19 +1184,18 @@ CudaDeviceFunction void CollisionMRT(){
 
 //  FERROFLUIDIC UPDATE
 #ifdef OPTIONS_ferro
-	CudaDeviceFunction real_t calcmu () {
+	CudaDeviceFunction real_t getmu () {
 		real_t mu;
 		mu =  mu_1 + (PhaseF(0,0) - PhaseField_l) * (mu_2 - mu_1)/(PhaseField_h - PhaseField_l);
 		return mu;
 	}
 
-	CudaDeviceFunction real_t getmu() {
-		return calcmu();
-	}
 
 	CudaDeviceFunction real_t getPsi () {
-		return Psi_new(0,0);
+		return Psi_old(0,0);
 	}
+
+		
 
 	CudaDeviceFunction void calcPsiSource(){
 		real_t lap_psi;
@@ -1208,28 +1207,37 @@ CudaDeviceFunction void CollisionMRT(){
 		LapPsiSource = lap_psi;
 	}
 
+	CudaDeviceFunction real_t getLapPsiSource(){
+		return LapPsiSource;
+	}
+
 	CudaDeviceFunction void MagPoisson(){
-		Psi_new = (1/4) * (LapPsiSource + Psi_new(-1,0) + Psi_new(1,0) + Psi_new(0,-1) + Psi_new(0,1));
+		real_t psi_new;
+
 		switch  (NodeType & NODE_MAGFARFIELD)  {
 			case NODE_North:
-				Psi_new = Hy_far + Psi_new(0,-1);
+				psi_new = Psi_new(0,-1) + Hy_far;
 				break;
 			case NODE_South:
-				Psi_new = Psi_new(0,1) - Hy_far;
+				psi_new = Psi_new(0,1) - Hy_far;
 				break;
 			case NODE_East:
-				Psi_new = Psi_new(-1,0) + Hx_far;
+				psi_new = Psi_new(-1,0) + Hx_far;
 				break;
 			case NODE_West:
-				Psi_new = Psi_new(1,0) - Hx_far;
+				psi_new = Psi_new(1,0) - Hx_far;
 				break;
-
+			default:
+				psi_new = (1/4) * (LapPsiSource + Psi_new(-1,0) + Psi_new(1,0) + Psi_new(0,-1) + Psi_new(0,1));
+				break;
 		}
+		Psi_new = psi_new;
 	}
 
 	CudaDeviceFunction void FinaliseMagUpdate(){
-		Psi_new = Psi_old + relaxation * (Psi_new - Psi_old);
-		Psi_old = Psi_new;
+		real_t psinew = Psi_old(0,0) + relaxation * (Psi_new(0,0) - Psi_old(0,0));
+		Psi_new = psinew;
+		Psi_old = psinew;
 	}
 
 
@@ -1264,7 +1272,7 @@ CudaDeviceFunction void CollisionMRT(){
 	    Psi_old = Psi_old(0,0); 
 	    Psi_new = Psi_new(0,0);
 
-	    LapPsiSource = LapPsiSource(0,0);
+	    LapPsiSource = LapPsiSource;
 	}
 
 #endif

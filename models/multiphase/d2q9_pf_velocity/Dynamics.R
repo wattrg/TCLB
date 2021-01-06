@@ -70,6 +70,7 @@ if (Options$ferro) {
 
 	AddDensity("Psi_old", dx=0, dy=0, group="Ferrofluid")
 	AddField("Psi_old",stencil2d=1, group="Ferrofluid")
+
 	AddDensity("Psi_new", dx=0, dy=0, group="Ferrofluid")
 	AddField("Psi_new",stencil2d=1, group="Ferrofluid")
 
@@ -104,14 +105,16 @@ if (Options$RT) {
 	AddStage("PhaseInit" , "Init_phase", save=Fields$group %in% c("PF"))
 	AddStage("WallInit"  , "Init_wallNorm", save=Fields$group %in% c("nw"))
 	AddStage("BaseInit"  , "Init_distributions", save=Fields$group %in% c("g","h","Vel","Ferrofluid"))
-	AddStage("CopyDistributions", "FerroCopy", save=Fields$group %in% c("g","h","Vel","nw","PF","Ferrofluid"))
+	AddStage("CopyDistributions", "FerroCopy", save=Fields$group %in% c("g","h","Vel","nw","PF","Ferrofluid"), load=DensityAll$group %in% c("g","h","Vel","nw","PF","Ferrofluid"))
+	
 	# iteration
 	AddStage("BaseIter"  , "calcHydroIter", save=Fields$group %in% c("g","h","Vel","nw") , load=DensityAll$group %in% c("g","h","Vel","nw"))  # TODO: is nw needed here?
 	AddStage("PhaseIter" , "calcPhaseFIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("g","h","Vel","nw"))
 	AddStage("WallIter", "calcWallPhaseIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("nw"))	
-	AddStage("PsiSource", "calcPsiSource", save=Fields$group %in% c("Ferrofluid"), load=DensityAll$group %in% c("Ferrofluid"))
-	AddStage("MagPoisson", "MagPoisson", save=Fields$name %in% c("Psi_old", "Psi_new"), load=DensityAll$name %in% c("Psi_old", "Psi_new", "PF", "LapPsiSource"))
-	AddStage("FinishMag", "FinaliseMagUpdate", save=Fields$name %in% c("Psi_old", "Psi_new"), load=DensityAll$name %in% c("Psi_old", "Psi_new"))
+
+	AddStage("PsiSource" , "calcPsiSource"    , save=Fields$name %in% c("LapPsiSource"),       load=DensityAll$group %in% c("Ferrofluid", "PF"))
+	AddStage("MagPoisson", "MagPoisson"       , save=Fields$name %in% c("Psi_new"),            load=DensityAll$group %in% c("Ferrofluid", "PF"))
+	AddStage("FinishMag" , "FinaliseMagUpdate", save=Fields$name %in% c("Psi_new", "Psi_old"), load=DensityAll$group %in% c("Ferrofluid", "PF"))
 } else {
 	# initialisation
 	AddStage("PhaseInit" , "Init_phase", save=Fields$group %in% c("PF"))
@@ -120,15 +123,13 @@ if (Options$RT) {
 
 	# iteration
 	AddStage("BaseIter"  , "calcHydroIter"      , save=Fields$group %in% c("g","h","Vel","nw") , load=DensityAll$group %in% c("g","h","Vel","nw"))  # TODO: is nw needed here?
-	AddStage("PhaseIter" , "calcPhaseFIter"		, save=Fields$group %in% c("PF")			   , load=DensityAll$group %in% c("g","h","Vel","nw"))
-	AddStage("WallIter"  , "calcWallPhaseIter"	, save=Fields$group %in% c("PF")			   , load=DensityAll$group %in% c("nw"))	
+	AddStage("PhaseIter" , "calcPhaseFIter"		, save=Fields$group %in% c("PF")	   , load=DensityAll$group %in% c("g","h","Vel","nw"))
+	AddStage("WallIter"  , "calcWallPhaseIter"	, save=Fields$group %in% c("PF")	   , load=DensityAll$group %in% c("nw"))	
 }
 
 # actions
 if (Options$ferro){
-	#AddAction("MagToSteadyState", c("PsiSource", "MagPoisson"))
-	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", "PsiSource", "MagPoisson", "MagPoisson", "MagPoisson", "FinishMag", "CopyDistributions"))
-	AddAction("IterationConstantFerro", c("BaseIter", "PhaseIter", "WallIter", "CopyDistributions"))
+	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", "PsiSource", "MagPoisson", "MagPoisson", "MagPoisson","MagPoisson", "FinishMag"))
 	AddAction("Init", c("PhaseInit", "WallInit", "WallIter", "BaseInit"))
 } else{
 	AddAction("Iteration", c("BaseIter", "PhaseIter","WallIter"))
@@ -144,10 +145,11 @@ AddQuantity(name="Pressure",	  unit="Pa")
 AddQuantity(name="Normal", unit="1", vector=T)
 
 if (Options$ferro) {
-	AddQuantity(name="B", unit="T",vector=T, comment="magnetic flux density")
-	AddQuantity(name="H", unit="A/m", vector=T, comment="magnetic field intensity")
-	AddQuantity(name="mu", unit="H/m", comment="magnetic permeability")
-	AddQuantity(name="Psi", unit="A", comment="magnetic potential")
+	AddQuantity(name="B",vector=T, comment="magnetic flux density")
+	AddQuantity(name="H", vector=T, comment="magnetic field intensity")
+	AddQuantity(name="mu", comment="magnetic permeability")
+	AddQuantity(name="Psi", comment="magnetic potential")
+	AddQuantity(name="LapPsiSource", comment="source term for self correcting procedure")
 }
 
 #	Initialisation States
