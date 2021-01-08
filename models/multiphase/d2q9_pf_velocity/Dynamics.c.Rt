@@ -1213,7 +1213,7 @@ CudaDeviceFunction void CollisionMRT(){
 	}
 
 	CudaDeviceFunction void Mag_Poisson12(){
-		real_t psi_new;
+		real_t psi_new = 0.0;
 
 		real_t psi_left = Psi_new1(-1,0);
 		real_t psi_right = Psi_new1(1,0);
@@ -1222,7 +1222,21 @@ CudaDeviceFunction void CollisionMRT(){
 		real_t source = LapPsiSource;
 
 		//psi_new = (1/4) * (LapPsiSource + Psi_new1(-1,0) + Psi_new1(1,0) + Psi_new1(0,-1) + Psi_new1(0,1));
-		psi_new = (1/4) * (source + psi_down + psi_up + psi_left + psi_right);
+		//psi_new = (1/4) * (source + psi_down + psi_up + psi_left + psi_right);
+
+		printf("psi_new = %f\n", psi_new);
+		psi_new += psi_up;
+		printf("added psi_up, psi_new = %f\n", psi_new);
+		psi_new += psi_down;
+		printf("added psi_down, psi_new = %f\n", psi_new);
+		psi_new += psi_left;
+		printf("added psi_left, psi_new = %f\n", psi_new);
+		psi_new += psi_right;
+		printf("added psi_left, psi_new = %f\n", psi_new);
+		psi_new += source;
+		printf("added source, psi_new = %f\n", psi_new);
+		psi_new = psi_new/4;
+
 		switch  (NodeType & NODE_ADDITIONALS)  {
 			case NODE_North:
 				psi_new = Psi_new1(0,-1) + Hy_far;
@@ -1240,7 +1254,7 @@ CudaDeviceFunction void CollisionMRT(){
 		Psi_new2 = psi_new;
 	}
 	CudaDeviceFunction void Mag_Poisson21(){
-		real_t psi_new;
+		real_t psi_new = 0.0;
 
 		real_t psi_left = Psi_new2(-1,0);
 		real_t psi_right = Psi_new2(1,0);
@@ -1252,18 +1266,22 @@ CudaDeviceFunction void CollisionMRT(){
 		//psi_new = (1/4) * (LapPsiSource + Psi_new2(-1,0) + Psi_new2(1,0) + Psi_new2(0,-1) + Psi_new2(0,1));
 
 		
-		psi_new = (1/4) * (source + psi_down + psi_up + psi_left + psi_right);
+		//psi_new = (1/4) * (source + psi_down + psi_up + psi_left + psi_right);
 		
-		if (Y == 8.5){
-			printf("Psi_new1(0,0) before update = %f\n", Psi_new1(0,0));
-			printf("Psi_new2(0,1) = %f\n", Psi_new2(0,1));
-			printf("psi_up = %f\n", psi_up);
-			printf("Psi_new2(0,-1) = %f\n", Psi_new2(0,-1));
-			printf("Psi_new2(1,0) = %f\n", Psi_new2(1,0));
-			printf("Psi_new2(-1,0) = %f\n", Psi_new2(-1,0));
-			printf("LapPsiSource = %f\n", LapPsiSource);
-			printf("psi_new = %f\n\n", psi_new);
-		}
+		printf("psi_new = %f\n", psi_new);
+		psi_new += psi_up;
+		printf("added psi_up, psi_new = %f\n", psi_new);
+		psi_new += psi_down;
+		printf("added psi_down, psi_new = %f\n", psi_new);
+		psi_new += psi_left;
+		printf("added psi_left, psi_new = %f\n", psi_new);
+		psi_new += psi_right;
+		printf("added psi_left, psi_new = %f\n", psi_new);
+		psi_new += source;
+		printf("added source, psi_new = %f\n", psi_new);
+		psi_new = psi_new/4;
+
+		
 
 		switch  (NodeType & NODE_ADDITIONALS)  {
 			case NODE_North:
