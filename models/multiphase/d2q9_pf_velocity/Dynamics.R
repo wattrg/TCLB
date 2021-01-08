@@ -71,10 +71,8 @@ if (Options$ferro) {
 	AddDensity("Psi_old", dx=0, dy=0, group="Ferrofluid")
 	AddField("Psi_old",stencil2d=1, group="Ferrofluid")
 
-	AddDensity("Psi_new1", dx=0, dy=0, group="Ferrofluid")
-	AddField("Psi_new1",stencil2d=1, group="Ferrofluid")
-	AddDensity("Psi_new2", dx=0, dy=0, group="Ferrofluid")
-	AddField("Psi_new2",stencil2d=1, group="Ferrofluid")
+	AddDensity("Psi_new", dx=0, dy=0, group="Ferrofluid")
+	AddField("Psi_new",stencil2d=1, group="Ferrofluid")
 
 	AddDensity("LapPsiSource", dx=0, dy=0, group="Ferrofluid")
 	AddField("LapPsiSource", group="Ferrofluid") 
@@ -115,9 +113,8 @@ if (Options$RT) {
 	AddStage("WallIter", "calcWallPhaseIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("nw"))	
 
 	AddStage("PsiSource" , "calcPsiSource"    , save=Fields$name %in% c("LapPsiSource"),       load=DensityAll$name %in% c("Psi_old", "PhaseF"))
-	AddStage("MagPoisson12", "Mag_Poisson12"       , save=Fields$name %in% c("Psi_new2"),            load=DensityAll$name %in% c("Psi_new1"))
-	AddStage("MagPoisson21", "Mag_Poisson21", save=Fields$name %in% c("Psi_new1"), load=DensityAll$name %in% c("Psi_new2")) 
-	AddStage("FinishMag" , "FinaliseMagUpdate", save=Fields$name %in% c("Psi_new1", "Psi_old"), load=DensityAll$name %in% c("Psi_new2"))
+	AddStage("MagPoisson", "Mag_Poisson"       , save=Fields$name %in% c("Psi_new"),            load=DensityAll$name %in% c("Psi_new", "LapPsiSource"))
+	AddStage("FinishMag" , "FinaliseMagUpdate", save=Fields$name %in% c("Psi_new", "Psi_old"), load=DensityAll$name %in% c("Psi_new"))
 } else {
 	# initialisation
 	AddStage("PhaseInit" , "Init_phase", save=Fields$group %in% c("PF"))
@@ -132,7 +129,8 @@ if (Options$RT) {
 
 # actions
 if (Options$ferro){
-	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", "PsiSource", "MagPoisson12", "MagPoisson21", "MagPoisson12", "FinishMag"))
+	ferro_stages = c(rep(c("PsiSource", rep("MagPoisson", 5)),5), "FinishMag")
+	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", ferro_stages))
 	AddAction("Init", c("PhaseInit", "WallInit", "WallIter", "BaseInit"))
 } else{
 	AddAction("Iteration", c("BaseIter", "PhaseIter","WallIter"))

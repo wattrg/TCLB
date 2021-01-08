@@ -402,8 +402,7 @@ CudaDeviceFunction void Init_distributions(){
 	#endif
 
 	#ifdef OPTIONS_ferro
-		Psi_new1 = 0.0;
-		Psi_new2 = 0.0;
+		Psi_new = 0.0;
 		LapPsiSource = 0.0;
 		Psi_old = 0.0;
 	#endif
@@ -1212,97 +1211,43 @@ CudaDeviceFunction void CollisionMRT(){
 		return LapPsiSource;
 	}
 
-	CudaDeviceFunction void Mag_Poisson12(){
+	CudaDeviceFunction void Mag_Poisson(){
 		real_t psi_new = 0.0;
 
-		real_t psi_left = Psi_new1(-1,0);
-		real_t psi_right = Psi_new1(1,0);
-		real_t psi_up = Psi_new1(0,1);
-		real_t psi_down = Psi_new1(0,-1);
+		real_t psi_left = Psi_new(-1,0);
+		real_t psi_right = Psi_new(1,0);
+		real_t psi_up = Psi_new(0,1);
+		real_t psi_down = Psi_new(0,-1);
 		real_t source = LapPsiSource;
 
-		//psi_new = (1/4) * (LapPsiSource + Psi_new1(-1,0) + Psi_new1(1,0) + Psi_new1(0,-1) + Psi_new1(0,1));
-		//psi_new = (1/4) * (source + psi_down + psi_up + psi_left + psi_right);
 
-		printf("psi_new = %f\n", psi_new);
 		psi_new += psi_up;
-		printf("added psi_up, psi_new = %f\n", psi_new);
 		psi_new += psi_down;
-		printf("added psi_down, psi_new = %f\n", psi_new);
 		psi_new += psi_left;
-		printf("added psi_left, psi_new = %f\n", psi_new);
 		psi_new += psi_right;
-		printf("added psi_left, psi_new = %f\n", psi_new);
 		psi_new += source;
-		printf("added source, psi_new = %f\n", psi_new);
 		psi_new = psi_new/4;
 
 		switch  (NodeType & NODE_ADDITIONALS)  {
 			case NODE_North:
-				psi_new = Psi_new1(0,-1) + Hy_far;
+				psi_new = Psi_new(0,-1) + Hy_far;
 				break;
 			case NODE_South:
-				psi_new = Psi_new1(0,1) - Hy_far;
+				psi_new = Psi_new(0,1) - Hy_far;
 				break;
 			case NODE_East:
-				psi_new = Psi_new1(-1,0) + Hx_far;
+				psi_new = Psi_new(-1,0) + Hx_far;
 				break;
 			case NODE_West:
-				psi_new = Psi_new1(1,0) - Hx_far;
+				psi_new = Psi_new(1,0) - Hx_far;
 				break;
 		}
-		Psi_new2 = psi_new;
-	}
-	CudaDeviceFunction void Mag_Poisson21(){
-		real_t psi_new = 0.0;
-
-		real_t psi_left = Psi_new2(-1,0);
-		real_t psi_right = Psi_new2(1,0);
-		real_t psi_up = Psi_new2(0,1);
-		real_t psi_down = Psi_new2(0,-1);
-		real_t source = LapPsiSource;
-
-		// this doesn't work
-		//psi_new = (1/4) * (LapPsiSource + Psi_new2(-1,0) + Psi_new2(1,0) + Psi_new2(0,-1) + Psi_new2(0,1));
-
-		
-		//psi_new = (1/4) * (source + psi_down + psi_up + psi_left + psi_right);
-		
-		printf("psi_new = %f\n", psi_new);
-		psi_new += psi_up;
-		printf("added psi_up, psi_new = %f\n", psi_new);
-		psi_new += psi_down;
-		printf("added psi_down, psi_new = %f\n", psi_new);
-		psi_new += psi_left;
-		printf("added psi_left, psi_new = %f\n", psi_new);
-		psi_new += psi_right;
-		printf("added psi_left, psi_new = %f\n", psi_new);
-		psi_new += source;
-		printf("added source, psi_new = %f\n", psi_new);
-		psi_new = psi_new/4;
-
-		
-
-		switch  (NodeType & NODE_ADDITIONALS)  {
-			case NODE_North:
-				psi_new = Psi_new2(0,-1) + Hy_far;
-				break;
-			case NODE_South:
-				psi_new = Psi_new2(0,1) - Hy_far;
-				break;
-			case NODE_East:
-				psi_new = Psi_new2(-1,0) + Hx_far;
-				break;
-			case NODE_West:
-				psi_new = Psi_new2(1,0) - Hx_far;
-				break;
-		}
-		Psi_new1 = psi_new;
+		Psi_new = psi_new;
 	}
 
 	CudaDeviceFunction void FinaliseMagUpdate(){
-		real_t psinew = Psi_old(0,0) + relaxation * (Psi_new2(0,0) - Psi_old(0,0));
-		Psi_new1 = psinew;
+		real_t psinew = Psi_old(0,0) + relaxation * (Psi_new(0,0) - Psi_old(0,0));
+		Psi_new = psinew;
 		Psi_old = psinew;
 	}
 
@@ -1336,8 +1281,7 @@ CudaDeviceFunction void CollisionMRT(){
 	    PhaseF = PhaseF(0,0);
 
 	    Psi_old = Psi_old(0,0); 
-	    Psi_new1 = Psi_new1(0,0);
-	    Psi_new2 = Psi_new2(0,0);
+	    Psi_new = Psi_new(0,0);
 
 	    LapPsiSource = LapPsiSource;
 	}
