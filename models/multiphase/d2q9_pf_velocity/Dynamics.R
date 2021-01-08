@@ -71,8 +71,10 @@ if (Options$ferro) {
 	AddDensity("Psi_old", dx=0, dy=0, group="Ferrofluid")
 	AddField("Psi_old",stencil2d=1, group="Ferrofluid")
 
-	AddDensity("Psi_new", dx=0, dy=0, group="Ferrofluid")
-	AddField("Psi_new",stencil2d=1, group="Ferrofluid")
+	AddDensity("Psi_new1", dx=0, dy=0, group="Ferrofluid")
+	AddField("Psi_new1",stencil2d=1, group="Ferrofluid")
+	AddDensity("Psi_new2", dx=0, dy=0, group="Ferrofluid")
+	AddField("Psi_new2",stencil2d=1, group="Ferrofluid")
 
 	AddDensity("LapPsiSource", dx=0, dy=0, group="Ferrofluid")
 	AddField("LapPsiSource", group="Ferrofluid") 
@@ -112,9 +114,10 @@ if (Options$RT) {
 	AddStage("PhaseIter" , "calcPhaseFIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("g","h","Vel","nw"))
 	AddStage("WallIter", "calcWallPhaseIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("nw"))	
 
-	AddStage("PsiSource" , "calcPsiSource"    , save=Fields$name %in% c("LapPsiSource"),       load=DensityAll$group %in% c("Ferrofluid", "PF"))
-	AddStage("MagPoisson", "MagPoisson"       , save=Fields$name %in% c("Psi_new"),            load=DensityAll$group %in% c("Ferrofluid", "PF"))
-	AddStage("FinishMag" , "FinaliseMagUpdate", save=Fields$name %in% c("Psi_new", "Psi_old"), load=DensityAll$group %in% c("Ferrofluid", "PF"))
+	AddStage("PsiSource" , "calcPsiSource"    , save=Fields$name %in% c("LapPsiSource"),       load=DensityAll$name %in% c("Psi_old", "PhaseF"))
+	AddStage("MagPoisson12", "Mag_Poisson12"       , save=Fields$name %in% c("Psi_new2"),            load=DensityAll$name %in% c("Psi_new1"))
+	AddStage("MagPoisson21", "Mag_Poisson21", save=Fields$name %in% c("Psi_new1"), load=DensityAll$name %in% c("Psi_new2")) 
+	AddStage("FinishMag" , "FinaliseMagUpdate", save=Fields$name %in% c("Psi_new1", "Psi_old"), load=DensityAll$name %in% c("Psi_new2"))
 } else {
 	# initialisation
 	AddStage("PhaseInit" , "Init_phase", save=Fields$group %in% c("PF"))
@@ -129,7 +132,7 @@ if (Options$RT) {
 
 # actions
 if (Options$ferro){
-	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", "PsiSource", "MagPoisson", "MagPoisson", "MagPoisson","MagPoisson", "FinishMag"))
+	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", "PsiSource", "MagPoisson12", "MagPoisson21", "MagPoisson12", "FinishMag"))
 	AddAction("Init", c("PhaseInit", "WallInit", "WallIter", "BaseInit"))
 } else{
 	AddAction("Iteration", c("BaseIter", "PhaseIter","WallIter"))
@@ -257,10 +260,10 @@ AddNodeType(name="NVelocity", group="BOUNDARY")
 AddNodeType(name="WVelocity", group="BOUNDARY")
 
 if (Options$ferro) {
-	AddNodeType(name="North", group="MAGFARFIELD")
-	AddNodeType(name="South", group="MAGFARFIELD")
-	AddNodeType(name="East", group="MAGFARFIELD")
-	AddNodeType(name="West", group="MAGFARFIELD")
+	AddNodeType(name="North", group="ADDITIONALS")
+	AddNodeType(name="South", group="ADDITIONALS")
+	AddNodeType(name="East", group="ADDITIONALS")
+	AddNodeType(name="West", group="ADDITIONALS")
 }
 
 AddNodeType(name="Body", group="BODY")  # To measure force exerted on the body.
