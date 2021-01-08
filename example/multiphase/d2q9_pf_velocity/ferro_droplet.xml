@@ -15,7 +15,7 @@
    Created: 	14-08-2017 
     By:		T.Mitchell
 -->
-<Geometry nx="100.00" ny="100.00" >
+<Geometry nx="200.00" ny="200.00" >
 	<MRT><Box /></MRT>
 	<Wall mask="ALL">
 	    <Box   ny="1"  />
@@ -45,9 +45,9 @@
 	<Param name="PhaseField_l" value="0" />    
 	<Param name="PhaseField_init"   value="1" />    
 
-	<Param name="Radius"   value="2.0000" />
-	<Param name="CenterX"  value="50.0000" />
-	<Param name="CenterY"  value="50.0000" />
+	<Param name="Radius"   value="10.0000" />
+	<Param name="CenterX"  value="100.0000" />
+	<Param name="CenterY"  value="100.0000" />
 	<Param name="BubbleType"  value="1" />
 
 	<Param name="M"     value="0.0560" />   
@@ -55,12 +55,12 @@
 	<Param name="sigma" value="0.00076355" />
 
 	<Param name="mu_1" value = "1.000000" />
-	<Param name="mu_2" value = "1.000000" />
+	<Param name="mu_2" value = "3.000000" />
 
 	<Param name="Hy_far" value="1.0000"/>
-	<Param name="Hx_far" value="0.5000"/>
+	<Param name="Hx_far" value="1.0000"/>
 
-	<Param name="relaxation" value="0.4"/>
+	<Param name="relaxation" value="0.1"/>
 
 	<Param name="BuoyancyY" value="0.00000" />
 </Model>

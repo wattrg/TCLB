@@ -35,9 +35,15 @@
 //			- Pressure/velocity not fully tested - use at your own PERIL!
 
 
+
 // Maintainer & Implementation: Grzegorz Gruszczynski @ggruszczynski
 // Code updates:
 //		16/08/2018: Cascaded collision scheme
+
+// Ferrofluid TODOs:
+//	- update getH to correctly calculate H on the boundary nodes
+//	- test with different permeability for each phase
+//	- Add magnetic force to fluid body forces
 
 #include <math.h>
 #define PI 3.1415926535897
@@ -105,8 +111,9 @@ CudaDeviceFunction vector_t getNormal(){
 #ifdef OPTIONS_ferro
 	CudaDeviceFunction vector_t getH(){
 		vector_t H;
-		H.x = (Psi_old(1,0) - Psi_old(-1,0))/2.0;
-		H.y = (Psi_old(0,1) - Psi_old(0,-1))/2.0;
+		// is incorrect on boundaries
+		H.x = -(Psi_old(1,0) - Psi_old(-1,0))/2.0;
+		H.y = -(Psi_old(0,1) - Psi_old(0,-1))/2.0;
 		H.z = 0.0;
 		return H;
 	}
@@ -402,7 +409,8 @@ CudaDeviceFunction void Init_distributions(){
 	#endif
 
 	#ifdef OPTIONS_ferro
-		Psi_new = 0.0;
+		Psi_new1 = 0.0;
+		Psi_new2 = 0.0;
 		LapPsiSource = 0.0;
 		Psi_old = 0.0;
 	#endif
@@ -1203,7 +1211,7 @@ CudaDeviceFunction void CollisionMRT(){
 		// discrete laplace operator
 		lap_psi = -Psi_old(-1,0) - Psi_old(1,0) - Psi_old(0,-1) - Psi_old(0,1) + 4 * Psi_old(0,0);
 		lap_psi *= 1 - 1/relaxation;
-		lap_psi *= getmu();
+		lap_psi *= 1/getmu();
 		LapPsiSource = lap_psi;
 	}
 
@@ -1211,13 +1219,13 @@ CudaDeviceFunction void CollisionMRT(){
 		return LapPsiSource;
 	}
 
-	CudaDeviceFunction void Mag_Poisson(){
+	CudaDeviceFunction void Mag_Poisson12(){
 		real_t psi_new = 0.0;
 
-		real_t psi_left = Psi_new(-1,0);
-		real_t psi_right = Psi_new(1,0);
-		real_t psi_up = Psi_new(0,1);
-		real_t psi_down = Psi_new(0,-1);
+		real_t psi_left = Psi_new1(-1,0);
+		real_t psi_right = Psi_new1(1,0);
+		real_t psi_up = Psi_new1(0,1);
+		real_t psi_down = Psi_new1(0,-1);
 		real_t source = LapPsiSource;
 
 
@@ -1230,24 +1238,58 @@ CudaDeviceFunction void CollisionMRT(){
 
 		switch  (NodeType & NODE_ADDITIONALS)  {
 			case NODE_North:
-				psi_new = Psi_new(0,-1) + Hy_far;
+				psi_new = Psi_new1(0,-1) + Hy_far;
 				break;
 			case NODE_South:
-				psi_new = Psi_new(0,1) - Hy_far;
+				psi_new = Psi_new1(0,1) - Hy_far;
 				break;
 			case NODE_East:
-				psi_new = Psi_new(-1,0) + Hx_far;
+				psi_new = Psi_new1(-1,0) + Hx_far;
 				break;
 			case NODE_West:
-				psi_new = Psi_new(1,0) - Hx_far;
+				psi_new = Psi_new1(1,0) - Hx_far;
 				break;
 		}
-		Psi_new = psi_new;
+		Psi_new2 = psi_new;
+	}
+
+	CudaDeviceFunction void Mag_Poisson21(){
+		real_t psi_new = 0.0;
+
+		real_t psi_left = Psi_new2(-1,0);
+		real_t psi_right = Psi_new2(1,0);
+		real_t psi_up = Psi_new2(0,1);
+		real_t psi_down = Psi_new2(0,-1);
+		real_t source = LapPsiSource;
+
+
+		psi_new += psi_up;
+		psi_new += psi_down;
+		psi_new += psi_left;
+		psi_new += psi_right;
+		psi_new += source;
+		psi_new = psi_new/4;
+
+		switch  (NodeType & NODE_ADDITIONALS)  {
+			case NODE_North:
+				psi_new = Psi_new2(0,-1) + Hy_far;
+				break;
+			case NODE_South:
+				psi_new = Psi_new2(0,1) - Hy_far;
+				break;
+			case NODE_East:
+				psi_new = Psi_new2(-1,0) + Hx_far;
+				break;
+			case NODE_West:
+				psi_new = Psi_new2(1,0) - Hx_far;
+				break;
+		}
+		Psi_new1 = psi_new;
 	}
 
 	CudaDeviceFunction void FinaliseMagUpdate(){
-		real_t psinew = Psi_old(0,0) + relaxation * (Psi_new(0,0) - Psi_old(0,0));
-		Psi_new = psinew;
+		real_t psinew = Psi_old(0,0) + relaxation * (Psi_new2(0,0) - Psi_old(0,0));
+		Psi_new1 = psinew;
 		Psi_old = psinew;
 	}
 
@@ -1281,7 +1323,8 @@ CudaDeviceFunction void CollisionMRT(){
 	    PhaseF = PhaseF(0,0);
 
 	    Psi_old = Psi_old(0,0); 
-	    Psi_new = Psi_new(0,0);
+	    Psi_new1 = Psi_new1(0,0);
+	    Psi_new2 = Psi_new2(0,0);
 
 	    LapPsiSource = LapPsiSource;
 	}
