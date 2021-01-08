@@ -105,8 +105,8 @@ CudaDeviceFunction vector_t getNormal(){
 #ifdef OPTIONS_ferro
 	CudaDeviceFunction vector_t getH(){
 		vector_t H;
-		H.x = -(Psi_old(1,0) - Psi_old(-1,0))/2.0;
-		H.y = -(Psi_old(0,1) - Psi_old(0,-1))/2.0;
+		H.x = (Psi_old(1,0) - Psi_old(-1,0))/2.0;
+		H.y = (Psi_old(0,1) - Psi_old(0,-1))/2.0;
 		H.z = 0.0;
 		return H;
 	}
@@ -116,7 +116,7 @@ CudaDeviceFunction vector_t getNormal(){
 		real_t mu = getmu();
 		B.x = B.x * mu;
 		B.y = B.y * mu;
-		B.x = 0.0;
+		B.z = 0.0;
 		return B;
 	}
 #endif
