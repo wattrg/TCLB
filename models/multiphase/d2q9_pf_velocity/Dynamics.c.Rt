@@ -111,10 +111,25 @@ CudaDeviceFunction vector_t getNormal(){
 #ifdef OPTIONS_ferro
 	CudaDeviceFunction vector_t getH(){
 		vector_t H;
-		// is incorrect on boundaries
-		H.x = -(Psi_old(1,0) - Psi_old(-1,0))/2.0;
-		H.y = -(Psi_old(0,1) - Psi_old(0,-1))/2.0;
+		H.x = (Psi_old(1,0) - Psi_old(-1,0))/2.0;
+		H.y = (Psi_old(0,1) - Psi_old(0,-1))/2.0;
 		H.z = 0.0;
+		
+		switch (NodeType & NODE_ADDITIONALS) {
+		    case NODE_East:
+		    	H.x = Psi_old(0,0) - Psi_old(-1,0);
+			break;
+		    case NODE_West:
+		    	H.x = Psi_old(1,0) - Psi_old(0,0);
+			break;
+		    case NODE_North:
+		    	H.y = Psi_old(0,0) - Psi_old(0,-1);
+			break;
+		    case NODE_South:
+		        H.y = Psi_old(1,0) - Psi_old(0,0);
+			break;
+		}
+
 		return H;
 	}
 
@@ -409,10 +424,10 @@ CudaDeviceFunction void Init_distributions(){
 	#endif
 
 	#ifdef OPTIONS_ferro
-		Psi_new1 = 0.0;
-		Psi_new2 = 0.0;
+		Psi_new1 = Hx_far*X + Hy_far*Y;
+		Psi_new2 = Hx_far*X + Hy_far*Y;
+		Psi_old = Hx_far*X + Hy_far*Y;
 		LapPsiSource = 0.0;
-		Psi_old = 0.0;
 	#endif
 
 	PhaseF = <?R C(sum(h)) ?>;
@@ -1192,6 +1207,11 @@ CudaDeviceFunction void CollisionMRT(){
 
 //  FERROFLUIDIC UPDATE
 #ifdef OPTIONS_ferro
+
+	CudaDeviceFunction real_t calc_mu(real_t phase){
+		return mu_1 + (phase - PhaseField_l) * (mu_2 - mu_1)/(PhaseField_h - PhaseField_l);
+	}
+
 	CudaDeviceFunction real_t getmu () {
 		real_t mu;
 		mu =  mu_1 + (PhaseF(0,0) - PhaseField_l) * (mu_2 - mu_1)/(PhaseField_h - PhaseField_l);
@@ -1206,12 +1226,19 @@ CudaDeviceFunction void CollisionMRT(){
 		
 
 	CudaDeviceFunction void calcPsiSource(){
-		real_t lap_psi;
+		real_t lap_psi = 0.0;
 
-		// discrete laplace operator
-		lap_psi = -Psi_old(-1,0) - Psi_old(1,0) - Psi_old(0,-1) - Psi_old(0,1) + 4 * Psi_old(0,0);
-		lap_psi *= 1 - 1/relaxation;
-		lap_psi *= 1/getmu();
+		if (!(NodeType & NODE_ADDITIONALS)){
+		    // discrete laplace operator
+
+		    lap_psi += Psi_old(-1, 0)*(calc_mu(PhaseF(-1, 0)) + calc_mu(PhaseF(0,0)))/2;
+		    lap_psi += Psi_old( 1, 0)*(calc_mu(PhaseF( 1, 0)) + calc_mu(PhaseF(0,0)))/2;
+		    lap_psi += Psi_old( 0,-1)*(calc_mu(PhaseF( 0,-1)) + calc_mu(PhaseF(0,0)))/2;
+		    lap_psi += Psi_old( 0, 1)*(calc_mu(PhaseF( 0, 1)) + calc_mu(PhaseF(0,0)))/2;
+		    lap_psi -= Psi_old(0,0) * (calc_mu(PhaseF(1,0)) + calc_mu(PhaseF(0,1)) + calc_mu(PhaseF(-1,0)) + calc_mu(PhaseF(0,-1)) + 4*calc_mu(PhaseF(0,0)))/2;
+		    lap_psi *= 1 - 1/relaxation;
+		    lap_psi *= 1/getmu();
+		}
 		LapPsiSource = lap_psi;
 	}
 
@@ -1233,8 +1260,8 @@ CudaDeviceFunction void CollisionMRT(){
 		psi_new += psi_down;
 		psi_new += psi_left;
 		psi_new += psi_right;
-		psi_new += source;
-		psi_new = psi_new/4;
+		psi_new -= source;
+		psi_new  = psi_new/4;
 
 		switch  (NodeType & NODE_ADDITIONALS)  {
 			case NODE_North:
@@ -1267,21 +1294,21 @@ CudaDeviceFunction void CollisionMRT(){
 		psi_new += psi_down;
 		psi_new += psi_left;
 		psi_new += psi_right;
-		psi_new += source;
-		psi_new = psi_new/4;
+		psi_new -= source;
+		psi_new  = psi_new/4;
 
 		switch  (NodeType & NODE_ADDITIONALS)  {
 			case NODE_North:
 				psi_new = Psi_new2(0,-1) + Hy_far;
 				break;
 			case NODE_South:
-				psi_new = Psi_new2(0,1) - Hy_far;
+				psi_new = Psi_new2(0, 1) - Hy_far;
 				break;
 			case NODE_East:
 				psi_new = Psi_new2(-1,0) + Hx_far;
 				break;
 			case NODE_West:
-				psi_new = Psi_new2(1,0) - Hx_far;
+				psi_new = Psi_new2( 1,0) - Hx_far;
 				break;
 		}
 		Psi_new1 = psi_new;

@@ -115,8 +115,8 @@ if (Options$RT) {
 	AddStage("PhaseIter" , "calcPhaseFIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("g","h","Vel","nw"))
 	AddStage("WallIter", "calcWallPhaseIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("nw"))	
 
-	AddStage("PsiSource" , "calcPsiSource"    , save=Fields$name %in% c("LapPsiSource"),       load=DensityAll$name %in% c("Psi_old", "PhaseF"))
-	AddStage("MagPoisson12", "Mag_Poisson12"       , save=Fields$name %in% c("Psi_new2"),            load=DensityAll$name %in% c("Psi_new1", "LapPsiSource"))
+	AddStage("PsiSource" , "calcPsiSource", save=Fields$name %in% c("LapPsiSource"), load=DensityAll$name %in% c("Psi_old", "PhaseF"))
+	AddStage("MagPoisson12", "Mag_Poisson12", save=Fields$name %in% c("Psi_new2"), load=DensityAll$name %in% c("Psi_new1", "LapPsiSource"))
 	AddStage("MagPoisson21", "Mag_Poisson21", save = Fields$name %in% c("Psi_new1"), load=DensityAll$name %in% c("Psi_new2", "LapPsiSource"))
 	AddStage("FinishMag" , "FinaliseMagUpdate", save=Fields$name %in% c("Psi_new1", "Psi_old"), load=DensityAll$name %in% c("Psi_new2"))
 } else {
@@ -133,8 +133,7 @@ if (Options$RT) {
 
 # actions
 if (Options$ferro){
-	ferro_stages = 
-	ferro_stages = c(rep(c("PsiSource", rep(c("MagPoisson12", "MagPoisson21"), 10),"MagPoisson12", "FinishMag"),5))
+	ferro_stages = c(rep(c("PsiSource", rep(c("MagPoisson12", "MagPoisson21"), 10),"MagPoisson12", "FinishMag"),2))
 	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", ferro_stages))
 	AddAction("Init", c("PhaseInit", "WallInit", "WallIter", "BaseInit"))
 } else{
