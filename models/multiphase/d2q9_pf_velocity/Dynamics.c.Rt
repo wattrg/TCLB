@@ -115,19 +115,9 @@ CudaDeviceFunction vector_t getNormal(){
 		H.y = (Psi_old(0,1) - Psi_old(0,-1))/2.0;
 		H.z = 0.0;
 		
-		switch (NodeType & NODE_ADDITIONALS) {
-		    case NODE_East:
-		    	H.x = Psi_old(0,0) - Psi_old(-1,0);
-			break;
-		    case NODE_West:
-		    	H.x = Psi_old(1,0) - Psi_old(0,0);
-			break;
-		    case NODE_North:
-		    	H.y = Psi_old(0,0) - Psi_old(0,-1);
-			break;
-		    case NODE_South:
-		        H.y = Psi_old(1,0) - Psi_old(0,0);
-			break;
+		if (NodeType & NODE_ADDITIONALS) {
+		    H.x = Hx_far;
+		    H.y = Hy_far;
 		}
 
 		return H;
@@ -1223,6 +1213,23 @@ CudaDeviceFunction void CollisionMRT(){
 		return Psi_old(0,0);
 	}
 
+	CudaDeviceFunction real_t calcDivB () {
+		real_t lap_psi = 0.0;
+
+		if (!(NodeType & NODE_ADDITIONALS)){
+		    // discrete laplace operator
+
+		    lap_psi += Psi_old(-1, 0)*(calc_mu(PhaseF(-1, 0)) + calc_mu(PhaseF(0,0)))/2;
+		    lap_psi += Psi_old( 1, 0)*(calc_mu(PhaseF( 1, 0)) + calc_mu(PhaseF(0,0)))/2;
+		    lap_psi += Psi_old( 0,-1)*(calc_mu(PhaseF( 0,-1)) + calc_mu(PhaseF(0,0)))/2;
+		    lap_psi += Psi_old( 0, 1)*(calc_mu(PhaseF( 0, 1)) + calc_mu(PhaseF(0,0)))/2;
+		    lap_psi -= Psi_old(0,0) * (calc_mu(PhaseF(1,0)) + calc_mu(PhaseF(0,1)) + calc_mu(PhaseF(-1,0)) + calc_mu(PhaseF(0,-1)) + 4*calc_mu(PhaseF(0,0)))/2;
+		}
+
+		return fabs(lap_psi);
+	}
+
+
 		
 
 	CudaDeviceFunction void calcPsiSource(){
@@ -1247,77 +1254,51 @@ CudaDeviceFunction void CollisionMRT(){
 	}
 
 	CudaDeviceFunction void Mag_Poisson12(){
-		real_t psi_new = 0.0;
 
-		real_t psi_left = Psi_new1(-1,0);
-		real_t psi_right = Psi_new1(1,0);
-		real_t psi_up = Psi_new1(0,1);
-		real_t psi_down = Psi_new1(0,-1);
-		real_t source = LapPsiSource;
-
-
-		psi_new += psi_up;
-		psi_new += psi_down;
-		psi_new += psi_left;
-		psi_new += psi_right;
-		psi_new -= source;
-		psi_new  = psi_new/4;
+		Psi_new2 = (Psi_new1(-1,0) + Psi_new1(1,0) + Psi_new1(0,1) + Psi_new1(0,-1) - LapPsiSource)/4;
 
 		switch  (NodeType & NODE_ADDITIONALS)  {
 			case NODE_North:
-				psi_new = Psi_new1(0,-1) + Hy_far;
+				Psi_new2 = Psi_new1(0,-1) + Hy_far;
 				break;
 			case NODE_South:
-				psi_new = Psi_new1(0,1) - Hy_far;
+				Psi_new2 = Psi_new1(0,1) - Hy_far;
 				break;
 			case NODE_East:
-				psi_new = Psi_new1(-1,0) + Hx_far;
+				Psi_new2 = Psi_new1(-1,0) + Hx_far;
 				break;
 			case NODE_West:
-				psi_new = Psi_new1(1,0) - Hx_far;
+				Psi_new2 = Psi_new1(1,0) - Hx_far;
 				break;
 		}
-		Psi_new2 = psi_new;
 	}
 
 	CudaDeviceFunction void Mag_Poisson21(){
-		real_t psi_new = 0.0;
 
-		real_t psi_left = Psi_new2(-1,0);
-		real_t psi_right = Psi_new2(1,0);
-		real_t psi_up = Psi_new2(0,1);
-		real_t psi_down = Psi_new2(0,-1);
-		real_t source = LapPsiSource;
-
-
-		psi_new += psi_up;
-		psi_new += psi_down;
-		psi_new += psi_left;
-		psi_new += psi_right;
-		psi_new -= source;
-		psi_new  = psi_new/4;
+		Psi_new1 = (Psi_new2(-1,0) + Psi_new2(1,0) + Psi_new2(0,1) + Psi_new2(0,-1) - LapPsiSource)/4;
 
 		switch  (NodeType & NODE_ADDITIONALS)  {
 			case NODE_North:
-				psi_new = Psi_new2(0,-1) + Hy_far;
+				Psi_new1 = Psi_new2(0,-1) + Hy_far;
 				break;
 			case NODE_South:
-				psi_new = Psi_new2(0, 1) - Hy_far;
+				Psi_new1 = Psi_new2(0,1) - Hy_far;
 				break;
 			case NODE_East:
-				psi_new = Psi_new2(-1,0) + Hx_far;
+				Psi_new1 = Psi_new2(-1,0) + Hx_far;
 				break;
 			case NODE_West:
-				psi_new = Psi_new2( 1,0) - Hx_far;
+				Psi_new1 = Psi_new2(1,0) - Hx_far;
 				break;
 		}
-		Psi_new1 = psi_new;
 	}
 
 	CudaDeviceFunction void FinaliseMagUpdate(){
 		real_t psinew = Psi_old(0,0) + relaxation * (Psi_new2(0,0) - Psi_old(0,0));
 		Psi_new1 = psinew;
 		Psi_old = psinew;
+		AddToDiffB(fabs(Psi_new2(0,0) - Psi_old(0,0)));
+		AddToDivB(calcDivB());
 	}
 
 

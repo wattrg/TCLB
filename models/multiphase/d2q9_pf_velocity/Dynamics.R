@@ -111,7 +111,7 @@ if (Options$RT) {
 	AddStage("CopyDistributions", "FerroCopy", save=Fields$group %in% c("g","h","Vel","nw","PF","Ferrofluid"), load=DensityAll$group %in% c("g","h","Vel","nw","PF","Ferrofluid"))
 	
 	# iteration
-	AddStage("BaseIter"  , "calcHydroIter", save=Fields$group %in% c("g","h","Vel","nw") , load=DensityAll$group %in% c("g","h","Vel","nw"))  # TODO: is nw needed here?
+	AddStage("BaseIter"  , "calcHydroIter", save=Fields$group %in% c("g","h","Vel","nw","Ferrofluid","PF") , load=DensityAll$group %in% c("g","h","Vel","nw","Ferrofluid","PF"))  # TODO: is nw needed here?
 	AddStage("PhaseIter" , "calcPhaseFIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("g","h","Vel","nw"))
 	AddStage("WallIter", "calcWallPhaseIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("nw"))	
 
@@ -133,8 +133,9 @@ if (Options$RT) {
 
 # actions
 if (Options$ferro){
-	ferro_stages = c(rep(c("PsiSource", rep(c("MagPoisson12", "MagPoisson21"), 10),"MagPoisson12", "FinishMag"),2))
-	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", ferro_stages))
+	ferro_stages = c(c("PsiSource", rep(c("MagPoisson12", "MagPoisson21"), 50),"MagPoisson12", "FinishMag"))
+	AddAction("MagToSteadyState", c("CopyDistributions", ferro_stages))
+	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", rep(ferro_stages,5)))
 	AddAction("Init", c("PhaseInit", "WallInit", "WallIter", "BaseInit"))
 } else{
 	AddAction("Iteration", c("BaseIter", "PhaseIter","WallIter"))
@@ -198,6 +199,7 @@ AddSetting(name="GravitationX", default=0.0, comment='applied (rho)*GravitationX
 AddSetting(name="GravitationY", default=0.0, comment='applied (rho)*GravitationY', zonal=T)
 AddSetting(name="BuoyancyX", default=0.0, comment='applied (rho-rho_h)*BuoyancyX')
 AddSetting(name="BuoyancyY", default=0.0, comment='applied (rho-rho_h)*BuoyancyY')
+AddSetting(name="fixedIterator", default=2.0, comment='fixed iterator for velocity calculation')
 
 
 #	Inputs: ferrofluid parameters
@@ -209,7 +211,6 @@ if (Options$ferro) {
 	AddSetting(name="Hy_far", default=0.0, comment="far field magnetic intensity")
 }
 
-AddSetting(name="fixedIterator", default=2.0, comment='fixed iterator for velocity calculation')
 #	Globals - table of global integrals that can be monitored and optimized
 AddGlobal(name="PressureLoss", comment='pressure loss', unit="1mPa")
 AddGlobal(name="OutletFlux", comment='pressure loss', unit="1m2/s")
@@ -227,6 +228,11 @@ AddGlobal(name="BubbleVelocityY", comment='Bubble velocity in the y direction')
 AddGlobal(name="BubbleVelocityZ", comment='Bubble velocity in the z direction')
 AddGlobal(name="BubbleLocationY", comment='Bubble Location in the y direction')
 AddGlobal(name="SumPhiGas", comment='Summation of (1-phi) in all gas cells')
+
+if (Options$ferro) {
+	AddGlobal(name="DiffB", comment='difference between successive Psi fields')
+	AddGlobal(name="DivB", comment='sum of divergence of B in each cell')
+}
 
 
 if (Options$debug){
