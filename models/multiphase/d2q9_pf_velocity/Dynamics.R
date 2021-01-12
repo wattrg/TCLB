@@ -70,7 +70,6 @@ if (Options$ferro) {
 
 	AddDensity("Psi_old", dx=0, dy=0, group="Ferrofluid")
 	AddField("Psi_old",stencil2d=1, group="Ferrofluid")
-
 	AddDensity("Psi_new1", dx=0, dy=0, group="Ferrofluid")
 	AddField("Psi_new1",stencil2d=1, group="Ferrofluid")
 
@@ -111,7 +110,7 @@ if (Options$RT) {
 	AddStage("CopyDistributions", "FerroCopy", save=Fields$group %in% c("g","h","Vel","nw","PF","Ferrofluid"), load=DensityAll$group %in% c("g","h","Vel","nw","PF","Ferrofluid"))
 	
 	# iteration
-	AddStage("BaseIter"  , "calcHydroIter", save=Fields$group %in% c("g","h","Vel","nw","Ferrofluid","PF") , load=DensityAll$group %in% c("g","h","Vel","nw","Ferrofluid","PF"))  # TODO: is nw needed here?
+	AddStage("BaseIter"  , "calcHydroIter", save=Fields$group %in% c("g","h","Vel","nw", "Ferrofluid") , load=DensityAll$group %in% c("g","h","Vel","nw","Ferrofluid"))  # TODO: is nw needed here?
 	AddStage("PhaseIter" , "calcPhaseFIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("g","h","Vel","nw"))
 	AddStage("WallIter", "calcWallPhaseIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("nw"))	
 

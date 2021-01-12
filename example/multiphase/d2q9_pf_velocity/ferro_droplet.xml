@@ -68,12 +68,13 @@
 <VTK />
 <Container>
 	<Stop DiffBBelow="1e-2" Times="2" Iterations="500"/>
-	<RunAction name="MagToSteadyState" Iterations="4000"/>
+	<Log Iterations="500"/>
+	<RunAction name="MagToSteadyState" Iterations="5000"/>
 </Container>
 <VTK />
-<Solve Iterations="10.000000">
-	<VTK Iterations="1" />
-	<Failcheck Iterations="10.000000"/>
-	<Log Iterations = "1"/>
+<Solve Iterations="100.000000">
+	<VTK Iterations="50" />
+	<Failcheck Iterations="50.000000"/>
+	<Log Iterations = "100"/>
 </Solve>
 </CLBConfig>
