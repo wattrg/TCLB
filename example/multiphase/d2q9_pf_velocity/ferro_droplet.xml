@@ -72,7 +72,7 @@
 	<RunAction name="MagToSteadyState" Iterations="5000"/>
 </Container>
 <VTK />
-<Solve Iterations="100.000000">
+<Solve Iterations="1000.000000">
 	<VTK Iterations="50" />
 	<Failcheck Iterations="50.000000"/>
 	<Log Iterations = "100"/>

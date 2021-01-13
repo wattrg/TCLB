@@ -1081,7 +1081,7 @@ CudaDeviceFunction vector_t calcTotalHydrodynamicForceMRT(vector_t gradPhi, real
 			stress[2] += R[i]*d2q9_ey[i]*d2q9_ey[i];    
 		}
 		
-		// Viscous force
+		// Viscous vforce
 		F_mu[0] = (0.5-tau) * (stress[0]*gradPhi.x + stress[1]*gradPhi.y) * density_coeff;
 		F_mu[1] = (0.5-tau) * (stress[1]*gradPhi.x + stress[2]*gradPhi.y) * density_coeff;
 
@@ -1134,6 +1134,12 @@ CudaDeviceFunction void CollisionMRT(){
 
 	real_t p = getNormalizedPressure(); // normlized pressure
 	vector_t Fhydro = calcTotalHydrodynamicForceMRT(gradPhi, myPhaseF, rho, tau,  calcMu(myPhaseF), p);
+
+	#ifdef OPTIONS_ferro
+	    vector_t Fmag = calcMagForce();
+	    Fhydro.x += Fmag.x;
+	    Fhydro.y += Fmag.y;
+	#endif
 
 	// PHASE FIELD POPULATION UPDATE:
 	#ifdef OPTIONS_RT
@@ -1296,7 +1302,7 @@ CudaDeviceFunction void CollisionMRT(){
 		Psi_new1 = psinew;
 		Psi_old = psinew;
 		AddToDiffB(fabs(Psi_new2(0,0) - Psi_old(0,0)));
-		AddToDivB(calcDivB());
+		//AddToDivB(calcDivB());
 	}
 
 
@@ -1334,6 +1340,22 @@ CudaDeviceFunction void CollisionMRT(){
 
 	    LapPsiSource = LapPsiSource(0,0);
 
+	}
+
+	CudaDeviceFunction vector_t calcMagForce (){
+	    vector_t MagForce;
+	    MagForce.x  = square(Psi_old(1,0) - Psi_old(0,0)) + square(Psi_old(0,1) + Psi_old(1,1) - Psi_old(0,-1) - Psi_old(1,-1))/16.0;
+	    MagForce.x -= square(Psi_old(0,0) - Psi_old(-1,0)) + square(Psi_old(0,1) + Psi_old(-1,1) - Psi_old(0,-1) - Psi_old(-1,-1))/16.0;
+	    MagForce.y  = square(Psi_old(0,1) - Psi_old(0,0)) + square(Psi_old(1,0) + Psi_old(1,1) - Psi_old(-1,0) - Psi_old(-1,1))/16.0;
+	    MagForce.y -= square(Psi_old(0,0) - Psi_old(0,-1)) + square(Psi_old(1,0) + Psi_old(1,-1) - Psi_old(-1,0) - Psi_old(-1,-1)) / 16.0;
+	    MagForce.x *= -(calc_mu(PhaseF(0,0)) - mu_0)/2.0;
+	    MagForce.y *= -(calc_mu(PhaseF(0,0)) - mu_0)/2.0;
+
+	    return MagForce;
+	}
+
+	CudaDeviceFunction real_t square(real_t x) {
+		return x * x;
 	}
 
 #endif

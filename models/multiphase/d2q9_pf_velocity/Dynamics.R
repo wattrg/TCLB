@@ -111,13 +111,13 @@ if (Options$RT) {
 	
 	# iteration
 	AddStage("BaseIter"  , "calcHydroIter", save=Fields$group %in% c("g","h","Vel","nw", "Ferrofluid") , load=DensityAll$group %in% c("g","h","Vel","nw","Ferrofluid"))  # TODO: is nw needed here?
-	AddStage("PhaseIter" , "calcPhaseFIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("g","h","Vel","nw"))
+	AddStage("PhaseIter" , "calcPhaseFIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("g","h","Vel","nw","Ferrofluid"))
 	AddStage("WallIter", "calcWallPhaseIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("nw"))	
 
 	AddStage("PsiSource" , "calcPsiSource", save=Fields$name %in% c("LapPsiSource"), load=DensityAll$name %in% c("Psi_old", "PhaseF"))
 	AddStage("MagPoisson12", "Mag_Poisson12", save=Fields$name %in% c("Psi_new2"), load=DensityAll$name %in% c("Psi_new1", "LapPsiSource"))
 	AddStage("MagPoisson21", "Mag_Poisson21", save = Fields$name %in% c("Psi_new1"), load=DensityAll$name %in% c("Psi_new2", "LapPsiSource"))
-	AddStage("FinishMag" , "FinaliseMagUpdate", save=Fields$name %in% c("Psi_new1", "Psi_old"), load=DensityAll$name %in% c("Psi_new2"))
+	AddStage("FinishMag" , "FinaliseMagUpdate", save=Fields$name %in% c("Psi_new1", "Psi_old"), load=DensityAll$name %in% c("Psi_new2","PhaseF", "Psi_old"))
 } else {
 	# initialisation
 	AddStage("PhaseInit" , "Init_phase", save=Fields$group %in% c("PF"))
@@ -204,8 +204,9 @@ AddSetting(name="fixedIterator", default=2.0, comment='fixed iterator for veloci
 #	Inputs: ferrofluid parameters
 if (Options$ferro) {
 	AddSetting(name="relaxation", default=0.4, comment="relaxation parameter for self correcting procedure")
-	AddSetting(name="mu_1", default=0.0, comment="magnetic permeability of first phase")
-	AddSetting(name="mu_2", default=0.0, comment="magnetic permeability of second phase")
+	AddSetting(name="mu_1", default=1.0, comment="magnetic permeability of first phase")
+	AddSetting(name="mu_2", default=1.0, comment="magnetic permeability of second phase")
+	AddSetting(name="mu_0", default=1.0, comment="magnetic permeability of free space")
 	AddSetting(name="Hx_far", default=0.0, comment="far field magnetic intensity")
 	AddSetting(name="Hy_far", default=0.0, comment="far field magnetic intensity")
 }
@@ -230,7 +231,7 @@ AddGlobal(name="SumPhiGas", comment='Summation of (1-phi) in all gas cells')
 
 if (Options$ferro) {
 	AddGlobal(name="DiffB", comment='difference between successive Psi fields')
-	AddGlobal(name="DivB", comment='sum of divergence of B in each cell')
+	#AddGlobal(name="DivB", comment='sum of divergence of B in each cell')
 }
 
 
