@@ -15,7 +15,7 @@
    Created: 	14-08-2017 
     By:		T.Mitchell
 -->
-<Geometry nx="300.00" ny="300.00" >
+<Geometry nx="512.00" ny="512.00" >
 	<MRT><Box /></MRT>
 	<Wall mask="ALL">
 	    <Box   ny="1"  />
@@ -45,9 +45,9 @@
 	<Param name="PhaseField_l" value="0" />    
 	<Param name="PhaseField_init"   value="1" />    
 
-	<Param name="Radius"   value="15.0000" />
-	<Param name="CenterX"  value="150.0000" />
-	<Param name="CenterY"  value="150.0000" />
+	<Param name="Radius"   value="30.0000" />
+	<Param name="CenterX"  value="256.0000" />
+	<Param name="CenterY"  value="256.0000" />
 	<Param name="BubbleType"  value="1" />
 
 	<Param name="M"     value="0.0560" />   
@@ -56,8 +56,9 @@
 
 	<Param name="mu_1" value = "1.000000" />
 	<Param name="mu_2" value = "3.000000" />
+	<Param name="mu_0" value = "1.000000"/>
 
-	<Param name="Hy_far" value="1.0000"/>
+	<Param name="Hy_far" value="0.050000"/>
 	<Param name="Hx_far" value="0.0000"/>
 
 	<Param name="relaxation" value="0.4"/>
@@ -69,12 +70,12 @@
 <Container>
 	<Stop DiffBBelow="1e-2" Times="2" Iterations="500"/>
 	<Log Iterations="500"/>
-	<RunAction name="MagToSteadyState" Iterations="5000"/>
+	<RunAction name="MagToSteadyState" Iterations="10000"/>
 </Container>
 <VTK />
-<Solve Iterations="1000.000000">
-	<VTK Iterations="50" />
-	<Failcheck Iterations="50.000000"/>
+<Solve Iterations="10000.000000">
+	<VTK Iterations="1000" />
+	<Failcheck Iterations="500.000000"/>
 	<Log Iterations = "100"/>
 </Solve>
 </CLBConfig>
