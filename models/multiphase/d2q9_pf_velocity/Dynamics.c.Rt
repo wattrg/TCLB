@@ -1348,8 +1348,8 @@ CudaDeviceFunction void CollisionMRT(){
 	    MagForce.x -= square(Psi_old(0,0) - Psi_old(-1,0)) + square(Psi_old(0,1) + Psi_old(-1,1) - Psi_old(0,-1) - Psi_old(-1,-1))/16.0;
 	    MagForce.y  = square(Psi_old(0,1) - Psi_old(0,0)) + square(Psi_old(1,0) + Psi_old(1,1) - Psi_old(-1,0) - Psi_old(-1,1))/16.0;
 	    MagForce.y -= square(Psi_old(0,0) - Psi_old(0,-1)) + square(Psi_old(1,0) + Psi_old(1,-1) - Psi_old(-1,0) - Psi_old(-1,-1)) / 16.0;
-	    MagForce.x *= -(calc_mu(PhaseF(0,0)) - mu_0)/2.0;
-	    MagForce.y *= -(calc_mu(PhaseF(0,0)) - mu_0)/2.0;
+	    MagForce.x *= (calc_mu(PhaseF(0,0)) - mu_0)/2.0;
+	    MagForce.y *= (calc_mu(PhaseF(0,0)) - mu_0)/2.0;
 
 	    return MagForce;
 	}
