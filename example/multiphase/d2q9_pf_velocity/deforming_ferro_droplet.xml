@@ -1,6 +1,6 @@
 
 <?xml version="1.0"?>
-<CLBConfig version="2.0" output="output/Bom_1238_new/">
+<CLBConfig version="2.0" output="output/Bom_344__new/">
 <!-- 
 	Model:	d2q9_pf_velocity_ferro
 		Can also be run with d2q9_pf_velocity_CM if the collision type is changed.
@@ -40,8 +40,8 @@
 	<Param name="Density_h" value="1.97500000" />    
 	<Param name="Density_l" value="1.000" />    
 
-	<Param name="Viscosity_h" value="2" />    
-	<Param name="Viscosity_l" value="0.1" />    
+	<Param name="Viscosity_h" value="0.05" />    
+	<Param name="Viscosity_l" value="0.0025" />    
 
 	<Param name="PhaseField_h" value="1" />    
 	<Param name="PhaseField_l" value="0" />    
@@ -54,13 +54,13 @@
 
 	<Param name="M"     value="0.10" />   
 	<Param name="W"     value="3.0560" /> 
-	<Param name="sigma" value="0.00307" />
+	<Param name="sigma" value="0.00191875" />
 
 	<Param name="mu_1" value = "1.000000" />
 	<Param name="mu_2" value = "3.200000" />
 	<Param name="mu_0" value = "1.000000"/>
 
-	<Param name="Hy_far" value="0.0308"/>
+	<Param name="Hy_far" value="0.01284571913"/>
 	<Param name="Hx_far" value="0.0000"/>
 
 	<Param name="relaxation" value="0.15"/>
