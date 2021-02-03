@@ -1,6 +1,6 @@
 
 <?xml version="1.0"?>
-<CLBConfig version="2.0" output="output/Bom_344__new/">
+<CLBConfig version="2.0" output="output/Bom_1238_relax_04/">
 <!-- 
 	Model:	d2q9_pf_velocity_ferro
 		Can also be run with d2q9_pf_velocity_CM if the collision type is changed.
@@ -60,10 +60,10 @@
 	<Param name="mu_2" value = "3.200000" />
 	<Param name="mu_0" value = "1.000000"/>
 
-	<Param name="Hy_far" value="0.01284571913"/>
+	<Param name="Hy_far" value="0.02437"/>
 	<Param name="Hx_far" value="0.0000"/>
 
-	<Param name="relaxation" value="0.15"/>
+	<Param name="relaxation" value="0.4"/>
 
 	<Param name="BuoyancyY" value="0.0000" />
 </Model>

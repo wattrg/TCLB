@@ -1,0 +1,49 @@
+mpi/openmpi-x86_64(20):ERROR:105: Unable to locate a modulefile for 'cuda/10.1'
+Job: 
+jID: 
+Nodes:
+
+Wed Dec  2 20:16:18 2020       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 418.67       Driver Version: 418.67       CUDA Version: 10.1     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|===============================+======================+======================|
+|   0  Tesla K80           Off  | 00000000:84:00.0 Off |                  Off |
+| N/A   24C    P8    25W / 149W |      0MiB / 12206MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                       GPU Memory |
+|  GPU       PID   Type   Process name                             Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+MPMD: TCLB: local:0/1 work:0/1 ---  connected to:
+[  ]    #### : -------------------------------------------------------------------------
+[  ]    #### : -  CLB version:         v6.5.0-4-g756d304                               -
+[  ]    #### : -        Model:          d2q9_pf_velocity                               -
+[  ]    #### : -------------------------------------------------------------------------
+[  ]    #### : Setting output path to: RayleighTaylorInstability
+[  ]    ---- : Discarding 1 comments
+[ 0]    ---- : Selecting device 0/1
+[ 0] warning ! No "Units" element in config file
+[  ]    ==== : Mesh size in config file: 256x1026x1
+[  ]    ---- : Global lattice size: 256x1026x1
+[  ]    ==== : Max region size: 262656. Mesh size 262656. Overhead:  0%
+[  ]    ---- : Local lattice size: 256x1026x1
+Hello allocator!
+[  ]    ---- :   Threads  |      Action
+[ 0] ERROR   ! invalid device function in LatticeContainer.inc.cpp at line 144
+-------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code.. Per user-direction, the job has been aborted.
+-------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+  Process name: [[47492,1],0]
+  Exit code:    1
+--------------------------------------------------------------------------
