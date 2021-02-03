@@ -70,11 +70,6 @@ if (Options$ferro) {
 
 	AddDensity("Psi_old", dx=0, dy=0, group="Ferrofluid")
 	AddField("Psi_old",stencil2d=1, group="Ferrofluid")
-	AddDensity("Psi_new1", dx=0, dy=0, group="Ferrofluid")
-	AddField("Psi_new1",stencil2d=1, group="Ferrofluid")
-
-	AddDensity("Psi_new2", dx=0, dy=0, group="Ferrofluid")
-	AddField("Psi_new2",stencil2d=1, group="Ferrofluid")
 
 	AddDensity("LapPsiSource", dx=0, dy=0, group="Ferrofluid")
 	AddField("LapPsiSource", group="Ferrofluid") 
@@ -107,17 +102,12 @@ if (Options$RT) {
 	AddStage("PhaseInit" , "Init_phase", save=Fields$group %in% c("PF"))
 	AddStage("WallInit"  , "Init_wallNorm", save=Fields$group %in% c("nw"))
 	AddStage("BaseInit"  , "Init_distributions", save=Fields$group %in% c("g","h","Vel","Ferrofluid"))
-	AddStage("CopyDistributions", "FerroCopy", save=Fields$group %in% c("g","h","Vel","nw","PF","Ferrofluid"), load=DensityAll$group %in% c("g","h","Vel","nw","PF","Ferrofluid"))
+	AddStage("Poisson", "SolvePoisson", save=Fields$group %in% c("g","h","Vel","nw","PF","Ferrofluid"))
 	
 	# iteration
 	AddStage("BaseIter"  , "calcHydroIter", save=Fields$group %in% c("g","h","Vel","nw", "Ferrofluid") , load=DensityAll$group %in% c("g","h","Vel","nw","Ferrofluid"))  # TODO: is nw needed here?
 	AddStage("PhaseIter" , "calcPhaseFIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("g","h","Vel","nw","Ferrofluid"))
 	AddStage("WallIter", "calcWallPhaseIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("nw"))	
-
-	AddStage("PsiSource" , "calcPsiSource", save=Fields$name %in% c("LapPsiSource"), load=DensityAll$name %in% c("Psi_old", "PhaseF"))
-	AddStage("MagPoisson12", "Mag_Poisson12", save=Fields$name %in% c("Psi_new2"), load=DensityAll$name %in% c("Psi_new1", "LapPsiSource"))
-	AddStage("MagPoisson21", "Mag_Poisson21", save = Fields$name %in% c("Psi_new1"), load=DensityAll$name %in% c("Psi_new2", "LapPsiSource"))
-	AddStage("FinishMag" , "FinaliseMagUpdate", save=Fields$name %in% c("Psi_new1", "Psi_old"), load=DensityAll$name %in% c("Psi_new2","PhaseF", "Psi_old"))
 } else {
 	# initialisation
 	AddStage("PhaseInit" , "Init_phase", save=Fields$group %in% c("PF"))
@@ -132,9 +122,8 @@ if (Options$RT) {
 
 # actions
 if (Options$ferro){
-	ferro_stages = c(c("PsiSource", rep(c("MagPoisson12", "MagPoisson21"), 100),"MagPoisson12", "FinishMag"))
-	AddAction("MagToSteadyState", c("CopyDistributions", ferro_stages))
-	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", rep(ferro_stages,10)))
+	AddAction("MagToSteadyState", "Poisson")
+	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter"))
 	AddAction("Init", c("PhaseInit", "WallInit", "WallIter", "BaseInit"))
 } else{
 	AddAction("Iteration", c("BaseIter", "PhaseIter","WallIter"))
