@@ -63,20 +63,19 @@
 	<Param name="Hy_far" value="0.0308"/>
 	<Param name="Hx_far" value="0.0000"/>
 
-	<Param name="relaxation" value="0.2"/>
+	<Param name="relaxation" value="0.078"/>
 
 	<Param name="BuoyancyY" value="0.0000" />
 </Model>
 <VTK />
-<Repeat Times="5">
-	<Repeat Times="2000"> 
+<Repeat Times="100">
+	<Repeat Times="100"> 
 		<Container>
-			<Stop DiffBBelow="1e-7" Times="2" Iterations="500"/>
-			<RunAction name="MagToSteadyState" Iterations="10000"/>
+			<Stop DiffBBelow="1e-3" Times="2" Iterations="100"/>
+			<RunAction name="MagToSteadyState" Iterations="1000000"/>
 		</Container>
-		<Solve Iterations="1.0"/>
+		<Solve Iterations="1"/>
 	</Repeat>
 	<VTK/>
 </Repeat>
-<VTK/>
 </CLBConfig>

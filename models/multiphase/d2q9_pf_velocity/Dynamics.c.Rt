@@ -414,8 +414,6 @@ CudaDeviceFunction void Init_distributions(){
 	#endif
 
 	#ifdef OPTIONS_ferro
-		Psi_new1 = Hx_far*X + Hy_far*Y;
-		Psi_new2 = Hx_far*X + Hy_far*Y;
 		Psi_old = Hx_far*X + Hy_far*Y;
 		LapPsiSource = 0.0;
 	#endif
@@ -1247,8 +1245,10 @@ CudaDeviceFunction void CollisionMRT(){
 		    lap_psi += Psi_old( 0,-1)*(calc_mu(PhaseF( 0,-1)) + calc_mu(PhaseF(0,0)))/2;
 		    lap_psi += Psi_old( 0, 1)*(calc_mu(PhaseF( 0, 1)) + calc_mu(PhaseF(0,0)))/2;
 		    lap_psi -= Psi_old(0,0) * (calc_mu(PhaseF(1,0)) + calc_mu(PhaseF(0,1)) + calc_mu(PhaseF(-1,0)) + calc_mu(PhaseF(0,-1)) + 4*calc_mu(PhaseF(0,0)))/2;
-		    lap_psi *= 1 - 1/relaxation;
-		    lap_psi *= 1/getmu();
+//		    lap_psi *= 1 - 1/relaxation;
+//		    lap_psi *= 1/getmu();
+		} else {
+			lap_psi = 0;
 		}
 		LapPsiSource = lap_psi;
 	}
@@ -1257,56 +1257,8 @@ CudaDeviceFunction void CollisionMRT(){
 		return LapPsiSource;
 	}
 
-	CudaDeviceFunction void Mag_Poisson12(){
 
-		Psi_new2 = (Psi_new1(-1,0) + Psi_new1(1,0) + Psi_new1(0,1) + Psi_new1(0,-1) - LapPsiSource)/4;
-
-		switch  (NodeType & NODE_ADDITIONALS)  {
-			case NODE_North:
-				Psi_new2 = Psi_new1(0,-1) + Hy_far;
-				break;
-			case NODE_South:
-				Psi_new2 = Psi_new1(0,1) - Hy_far;
-				break;
-			case NODE_East:
-				Psi_new2 = Psi_new1(-1,0) + Hx_far;
-				break;
-			case NODE_West:
-				Psi_new2 = Psi_new1(1,0) - Hx_far;
-				break;
-		}
-	}
-
-	CudaDeviceFunction void Mag_Poisson21(){
-
-		Psi_new1 = (Psi_new2(-1,0) + Psi_new2(1,0) + Psi_new2(0,1) + Psi_new2(0,-1) - LapPsiSource)/4;
-
-		switch  (NodeType & NODE_ADDITIONALS)  {
-			case NODE_North:
-				Psi_new1 = Psi_new2(0,-1) + Hy_far;
-				break;
-			case NODE_South:
-				Psi_new1 = Psi_new2(0,1) - Hy_far;
-				break;
-			case NODE_East:
-				Psi_new1 = Psi_new2(-1,0) + Hx_far;
-				break;
-			case NODE_West:
-				Psi_new1 = Psi_new2(1,0) - Hx_far;
-				break;
-		}
-	}
-
-	CudaDeviceFunction void FinaliseMagUpdate(){
-		real_t psinew = Psi_old(0,0) + relaxation * (Psi_new2(0,0) - Psi_old(0,0));
-		Psi_new1 = psinew;
-		Psi_old = psinew;
-		AddToDiffB(fabs(Psi_new2(0,0) - Psi_old(0,0)));
-		//AddToDivB(calcDivB());
-	}
-
-
-	CudaDeviceFunction void FerroCopy(){
+	CudaDeviceFunction void SolvePoisson(){
 	    // Save everything from buffer 1 to 2.
 	    g[0] = g0(0,0);
 	    g[1] = g1(0,0);
@@ -1334,12 +1286,28 @@ CudaDeviceFunction void CollisionMRT(){
 
 	    PhaseF = PhaseF(0,0);
 
-	    Psi_old = Psi_old(0,0); 
-	    Psi_new1 = Psi_new1(0,0);
-	    Psi_new2 = Psi_new2(0,0);
+//	    LapPsiSource = LapPsiSource(0,0);
+		calcPsiSource();
 
-	    LapPsiSource = LapPsiSource(0,0);
+	    real_t oldPsi = Psi_old(0,0);
+	    real_t newPsi = oldPsi + relaxation * LapPsiSource;
 
+		switch  (NodeType & NODE_ADDITIONALS)  {
+			case NODE_North:
+				newPsi = Psi_old(0,-1) + Hy_far;
+				break;
+			case NODE_South:
+				newPsi = Psi_old(0,1) - Hy_far;
+				break;
+			case NODE_East:
+				newPsi = Psi_old(-1,0) + Hx_far;
+				break;
+			case NODE_West:
+				newPsi = Psi_old(1,0) - Hx_far;
+				break;
+		}
+	    Psi_old = newPsi;
+	    AddToDiffB(fabs(oldPsi - newPsi));
 	}
 
 	CudaDeviceFunction vector_t calcMagForce (){
