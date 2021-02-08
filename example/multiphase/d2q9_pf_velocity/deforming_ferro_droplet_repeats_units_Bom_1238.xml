@@ -1,6 +1,6 @@
 
 <?xml version="1.0"?>
-<CLBConfig version="2.0" output="output/">
+<CLBConfig version="2.0" output="output/Bom_1238_inaccurate/">
 <!-- 
 	Model:	d2q9_pf_velocity_ferro
 		Can also be run with d2q9_pf_velocity_CM if the collision type is changed.
@@ -15,7 +15,11 @@
    Created: 	14-08-2017 
     By:		T.Mitchell
 -->
-<Geometry nx="200.0" ny="200.00" >
+<Units>
+	<Param value="0.000025m" gauge="1"/>
+	<Param value="1m2/s" gauge="1"/>
+</Units>
+<Geometry nx="5mm" ny="5mm" >
 	<MRT><Box /></MRT>
 	<Wall mask="ALL">
 	    <Box   ny="1"  />
@@ -37,31 +41,31 @@
 	</East>
 </Geometry>
 <Model>
-	<Param name="Density_h" value="1.97500000" />    
-	<Param name="Density_l" value="1.000" />    
+	<Param name="Density_h" value="1.58e3kg/m3" />    
+	<Param name="Density_l" value="0.8e3kg/m3" />    
 
-	<Param name="Viscosity_h" value="0.05" />    
-	<Param name="Viscosity_l" value="0.0025" />    
+	<Param name="Viscosity_h" value="16e-3Pas" />    
+	<Param name="Viscosity_l" value="0.8e-3Pas" />    
 
 	<Param name="PhaseField_h" value="1" />    
 	<Param name="PhaseField_l" value="0" />    
 	<Param name="PhaseField_init"   value="1" />    
 
-	<Param name="Radius"   value="20.0000" />
-	<Param name="CenterX"  value="100.0000" />
-	<Param name="CenterY"  value="100.0000" />
+	<Param name="Radius"   value="0.5mm" />
+	<Param name="CenterX"  value="2.5mm" />
+	<Param name="CenterY"  value="2.5mm" />
 	<Param name="BubbleType"  value="1" />
 
 	<Param name="M"     value="0.10" />   
 	<Param name="W"     value="3.0560" /> 
-	<Param name="sigma" value="0.00191875" />
+	<Param name="sigma" value="3.07mN/m" />
 
-	<Param name="mu_1" value = "1.000000" />
-	<Param name="mu_2" value = "3.200000" />
-	<Param name="mu_0" value = "1.000000"/>
+	<Param name="mu_1" value = "1.000000N/A2" />
+	<Param name="mu_2" value = "3.200000N/A2" />
+	<Param name="mu_0" value = "1.000000N/A2"/>
 
-	<Param name="Hy_far" value="0.024369"/>
-	<Param name="Hx_far" value="0.0000"/>
+	<Param name="Hy_far" value="5.5kA/m"/>
+	<Param name="Hx_far" value="0.0000A/m"/>
 
 	<Param name="relaxation" value="0.078"/>
 
@@ -69,9 +73,9 @@
 </Model>
 <VTK />
 <Repeat Times="10">
-	<Repeat Times="2000"> 
+	<Repeat Times="10000"> 
 		<Container>
-			<Stop DiffBBelow="1e-4" Times="2" Iterations="100"/>
+			<Stop DiffBBelow="1e-3kg/s/A/m3" Times="2" Iterations="100"/>
 			<RunAction name="MagToSteadyState" Iterations="1000000"/>
 		</Container>
 		<Solve Iterations="1"/>
