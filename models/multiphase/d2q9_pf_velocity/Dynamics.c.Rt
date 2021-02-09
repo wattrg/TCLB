@@ -111,9 +111,13 @@ CudaDeviceFunction vector_t getNormal(){
 #ifdef OPTIONS_ferro
 	CudaDeviceFunction vector_t getH(){
 		vector_t H;
-		H.x = (Psi_old(1,0) - Psi_old(-1,0))/2.0;
-		H.y = (Psi_old(0,1) - Psi_old(0,-1))/2.0;
-		H.z = 0.0;
+		//H.x = (Psi_old(1,0) - Psi_old(-1,0))/2.0;
+		//H.y = (Psi_old(0,1) - Psi_old(0,-1))/2.0;
+		// Let's try with isotropic differences:
+	H.x = (Psi_old(1,0) - Psi_old(-1,0))/3.0 + (Psi_old(1,1) - Psi_old(-1,-1) + Psi_old(1,-1) - Psi_old(-1,1))/12.0;
+	H.y = (Psi_old(0,1) - Psi_old(0,-1))/3.0 + (Psi_old(1,1) - Psi_old(-1,-1) + Psi_old(-1,1) - Psi_old(1,-1))/12.0;
+
+        H.z = 0.0;
 		
 		if (NodeType & NODE_ADDITIONALS) {
 		    H.x = Hx_far;
@@ -1203,11 +1207,13 @@ CudaDeviceFunction void CollisionMRT(){
 #ifdef OPTIONS_ferro
 
 	CudaDeviceFunction real_t calc_mu(real_t phase){
-		return mu_1 + (phase - PhaseField_l) * (mu_2 - mu_1)/(PhaseField_h - PhaseField_l);
+		//return mu_1 + (phase - PhaseField_l) * (mu_2 - mu_1)/(PhaseField_h - PhaseField_l);
+		return mu_1 + (phase) * (mu_2 - mu_1);
 	}
 
 	CudaDeviceFunction real_t getmu () {
-		return  mu_1 + (PhaseF(0,0) - PhaseField_l) * (mu_2 - mu_1)/(PhaseField_h - PhaseField_l);
+		//return  mu_1 + (PhaseF(0,0) - PhaseField_l) * (mu_2 - mu_1)/(PhaseField_h - PhaseField_l);
+		return mu_1 + (PhaseF(0,0)) * (mu_2 - mu_1);
 	}
 
 
@@ -1227,19 +1233,14 @@ CudaDeviceFunction void CollisionMRT(){
 		    lap_psi += Psi_old( 0, 1)*(calc_mu(PhaseF( 0, 1)) + calc_mu(PhaseF(0,0)))/2;
 		    lap_psi -= Psi_old(0,0) * (calc_mu(PhaseF(1,0)) + calc_mu(PhaseF(0,1)) + calc_mu(PhaseF(-1,0)) + calc_mu(PhaseF(0,-1)) + 4*calc_mu(PhaseF(0,0)))/2;
 		}
-
 		return fabs(lap_psi);
 	}
-
-
-		
 
 	CudaDeviceFunction void calcPsiSource(){
 		real_t lap_psi = 0.0;
 
 		if (!(NodeType & NODE_ADDITIONALS)){
 		    // discrete laplace operator
-
 		    lap_psi += Psi_old(-1, 0)*(calc_mu(PhaseF(-1, 0)) + calc_mu(PhaseF(0,0)))/2;
 		    lap_psi += Psi_old( 1, 0)*(calc_mu(PhaseF( 1, 0)) + calc_mu(PhaseF(0,0)))/2;
 		    lap_psi += Psi_old( 0,-1)*(calc_mu(PhaseF( 0,-1)) + calc_mu(PhaseF(0,0)))/2;
@@ -1310,12 +1311,18 @@ CudaDeviceFunction void CollisionMRT(){
 	    AddToDiffB(fabs(oldPsi - newPsi));
 	}
 
+    CudaDeviceFunction void calcH2(){
+	vector_t H;
+    H.x = (Psi_old(1,0) - Psi_old(-1,0))/3.0 + (Psi_old(1,1) - Psi_old(-1,-1) + Psi_old(1,-1) - Psi_old(-1,1))/12.0;
+	H.y = (Psi_old(0,1) - Psi_old(0,-1))/3.0 + (Psi_old(1,1) - Psi_old(-1,-1) + Psi_old(-1,1) - Psi_old(1,-1))/12.0;
+
+    H_mag = (H.x*H.x + H.y*H.y);
+}
+
 	CudaDeviceFunction vector_t calcMagForce (){
 	    vector_t MagForce;
-	    MagForce.x  = square(Psi_old(1,0) - Psi_old(0,0)) + square(Psi_old(0,1) + Psi_old(1,1) - Psi_old(0,-1) - Psi_old(1,-1))/16.0;
-	    MagForce.x -= square(Psi_old(0,0) - Psi_old(-1,0)) + square(Psi_old(0,1) + Psi_old(-1,1) - Psi_old(0,-1) - Psi_old(-1,-1))/16.0;
-	    MagForce.y  = square(Psi_old(0,1) - Psi_old(0,0)) + square(Psi_old(1,0) + Psi_old(1,1) - Psi_old(-1,0) - Psi_old(-1,1))/16.0;
-	    MagForce.y -= square(Psi_old(0,0) - Psi_old(0,-1)) + square(Psi_old(1,0) + Psi_old(1,-1) - Psi_old(-1,0) - Psi_old(-1,-1)) / 16.0;
+        MagForce.x = (H_mag(1,0) - H_mag(-1,0))/3.0 + (H_mag(1,1) - H_mag(-1,-1) + H_mag(1,-1) - H_mag(-1,1))/12.0;
+	    MagForce.y = (H_mag(0,1) - H_mag(0,-1))/3.0 + (H_mag(1,1) - H_mag(-1,-1) + H_mag(-1,1) - H_mag(1,-1))/12.0;
 	    MagForce.x *= (calc_mu(PhaseF(0,0)) - mu_0)/2.0;
 	    MagForce.y *= (calc_mu(PhaseF(0,0)) - mu_0)/2.0;
 

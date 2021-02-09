@@ -73,6 +73,7 @@ if (Options$ferro) {
 
 	AddDensity("LapPsiSource", dx=0, dy=0, group="Ferrofluid")
 	AddField("LapPsiSource", group="Ferrofluid") 
+	AddField("H_mag", stencil2d=1, group="Ferrofluid") 
 }
 
 # Stages - processes to run for initialisation and each iteration
@@ -103,7 +104,7 @@ if (Options$RT) {
 	AddStage("WallInit"  , "Init_wallNorm", save=Fields$group %in% c("nw"))
 	AddStage("BaseInit"  , "Init_distributions", save=Fields$group %in% c("g","h","Vel","Ferrofluid"))
 	AddStage("Poisson", "SolvePoisson", save=Fields$group %in% c("g","h","Vel","nw","PF","Ferrofluid"))
-	
+	AddStage("H_magnitude", "calcH2", save=Fields$name %in% c("H_mag"), load=DensityAll$group=="Ferrofluid")
 	# iteration
 	AddStage("BaseIter"  , "calcHydroIter", save=Fields$group %in% c("g","h","Vel","nw", "Ferrofluid") , load=DensityAll$group %in% c("g","h","Vel","nw","Ferrofluid"))  # TODO: is nw needed here?
 	AddStage("PhaseIter" , "calcPhaseFIter", save=Fields$group %in% c("PF"), load=DensityAll$group %in% c("g","h","Vel","nw","Ferrofluid"))
@@ -123,6 +124,7 @@ if (Options$RT) {
 # actions
 if (Options$ferro){
 	AddAction("MagToSteadyState", "Poisson")
+    AddAction("Update_H", c( "Poisson", "H_magnitude"))
 	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter"))
 	AddAction("Init", c("PhaseInit", "WallInit", "WallIter", "BaseInit"))
 } else{
