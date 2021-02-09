@@ -67,7 +67,7 @@
 
 <VTK />
 <Container>
-	<Stop DiffBBelow="1e-6" Times="2" Iterations="500"/>
+	<Stop DiffBBelow="1e-6" Times="2" Iterations="5000"/>
 	<Failcheck Iterations="1000.0000"/>
 	<Log Iterations="500"/>
 	<RunAction name="MagToSteadyState" Iterations="100000"/>
