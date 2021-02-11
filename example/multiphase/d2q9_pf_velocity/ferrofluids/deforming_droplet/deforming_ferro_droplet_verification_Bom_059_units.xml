@@ -1,20 +1,29 @@
 
 <?xml version="1.0"?>
-<CLBConfig version="2.0" output="output/self_correcting/">
+<CLBConfig version="2.0" output="output/Bom_059_units/">
 <!-- 
 	Model:	d2q9_pf_velocity_ferro
+        Verification case for ferrofluidic flows. This is
+        a popular case from e.g.
+            Exp: Flament et al. (1995) - PRE
+            Hu et al. (2018) - PRE
+            Li et al. (2020) - PoF
+        This case has a magnetic bond number:
+            Bo_m = 12.38
 
+   Created: 	09-02-2021 
+    By:		T.Mitchell & L. Laniewski-Wollk
 
-    Created: 	11/02/2021 
-    By:		R. Watt
+	
 -->
-<Units>
-	<Param value="1.256637e-06N/A2" gauge="1"/>
-	<Param value="0.0008m" gauge="10"/>
-	<Param value="800kg/m3" gauge="1"/>
-	<Param value="0.00307kg/s2" gauge="0.001"/>
-</Units>
-<Geometry nx="0.016m" ny="0.016" >
+	<Units>
+		<Param value="1.256637e-06N/A2" gauge="1"/>
+		<Param value="0.0008m" gauge="10"/>
+		<Param value="800kg/m3" gauge="1"/>
+		<Param value="0.00307kg/s2" gauge="0.001"/>
+	</Units>
+<Geometry nx="0.016m" ny="0.016m" >
+	<!--  5500A/m  1s -->
 	<MRT><Box /></MRT>
 	<Wall mask="ALL">
 	    <Box   ny="1"  />
@@ -52,30 +61,32 @@
 	<Param name="BubbleType"  value="1" />
 
 	<Param name="M"     value="0.10" />   
-	<Param name="W"     value="4.0" /> 
+	<Param name="W"     value="4" /> 
 	<Param name="sigma" value="0.00307kg/s2" />
 
 	<Param name="mu_1" value = "1.000000" />
 	<Param name="mu_2" value = "3.200000" />
 	<Param name="mu_0" value = "1.000000"/>
 
-	<Param name="Hy_far" value="5500A/m"/>
+	<Param name="Hy_far" value="1200A/m"/>
 	<Param name="Hx_far" value="0.0000"/>
 
-	<Param name="relaxation" value="0.2"/>
+	<Param name="relaxation" value="0.078"/>
 
 	<Param name="BuoyancyY" value="0.0000" />
 </Model>
 <VTK />
-<Repeat Times="20">
+<Repeat Times="10">
 	<Repeat Times="1000"> 
 		<Container>
 			<Stop DiffBBelow="1e-3" Times="2" Iterations="100"/>
-			<RunAction name="MagToSteadyState" Iterations="10000"/>
+			<RunAction name="MagToSteadyState" Iterations="1000000"/>
 		</Container>
-		<Solve Iterations="1.0"/>
+		<Container>
+			<RunAction name="Update_H" Iterations="1"/>
+		</Container>
+		<Solve Iterations="1"/>
 	</Repeat>
 	<VTK/>
 </Repeat>
-<VTK/>
 </CLBConfig>

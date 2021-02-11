@@ -24,3 +24,5 @@ p
 .idea/*
 compile.sh
 gpuRun.sh
+*.out
+tmp.*
