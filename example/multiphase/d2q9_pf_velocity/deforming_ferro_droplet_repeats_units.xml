@@ -3,19 +3,17 @@
 <CLBConfig version="2.0" output="output/">
 <!-- 
 	Model:	d2q9_pf_velocity_ferro
-		Can also be run with d2q9_pf_velocity_CM if the collision type is changed.
 
-	This is the test case from Yos et al. (2019) - Journal of Computational Physics
-	Density ratio:10
-	Viscosity ratio: 6.324555
-	Eotvos number = 100
-	Reynolds = 10
-	t* = 3750
 
-   Created: 	14-08-2017 
-    By:		T.Mitchell
+    Created: 	11/02/2021 
+    By:		R. Watt
 -->
-<Geometry nx="200.0" ny="200.00" >
+<units>
+	<Param value="1.256637e-06N/A2" gauge="1"/>
+	<Param value="0.0008m" gauge="10"/>
+	<Param value="800kg/m3" gauge="1"/>
+	<Param value="0.00307kg/s2" gauge="0.001"/>
+<Geometry nx="0.016m" ny="0.016" >
 	<MRT><Box /></MRT>
 	<Wall mask="ALL">
 	    <Box   ny="1"  />
@@ -40,27 +38,27 @@
 	<Param name="Density_h" value="1.97500000" />    
 	<Param name="Density_l" value="1.000" />    
 
-	<Param name="Viscosity_h" value="2" />    
-	<Param name="Viscosity_l" value="0.1" />    
+	<Param name="Viscosity_h" value="0.05" />    
+	<Param name="Viscosity_l" value="0.0025" />    
 
 	<Param name="PhaseField_h" value="1" />    
 	<Param name="PhaseField_l" value="0" />    
 	<Param name="PhaseField_init"   value="1" />    
 
-	<Param name="Radius"   value="20.0000" />
-	<Param name="CenterX"  value="100.0000" />
-	<Param name="CenterY"  value="100.0000" />
+	<Param name="Radius"   value="0.001m" />
+	<Param name="CenterX"  value="0.008m" />
+	<Param name="CenterY"  value="0.008m" />
 	<Param name="BubbleType"  value="1" />
 
 	<Param name="M"     value="0.10" />   
-	<Param name="W"     value="3.0560" /> 
-	<Param name="sigma" value="0.00307" />
+	<Param name="W"     value="4.0" /> 
+	<Param name="sigma" value="0.00307kg/s2" />
 
 	<Param name="mu_1" value = "1.000000" />
 	<Param name="mu_2" value = "3.200000" />
 	<Param name="mu_0" value = "1.000000"/>
 
-	<Param name="Hy_far" value="0.0308"/>
+	<Param name="Hy_far" value="5500A/m"/>
 	<Param name="Hx_far" value="0.0000"/>
 
 	<Param name="relaxation" value="0.2"/>
@@ -68,10 +66,10 @@
 	<Param name="BuoyancyY" value="0.0000" />
 </Model>
 <VTK />
-<Repeat Times="5">
-	<Repeat Times="2000"> 
+<Repeat Times="20">
+	<Repeat Times="1000"> 
 		<Container>
-			<Stop DiffBBelow="1e-7" Times="2" Iterations="500"/>
+			<Stop DiffBBelow="1e-3" Times="2" Iterations="100"/>
 			<RunAction name="MagToSteadyState" Iterations="10000"/>
 		</Container>
 		<Solve Iterations="1.0"/>
