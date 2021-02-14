@@ -26,3 +26,4 @@ compile.sh
 gpuRun.sh
 *.out
 tmp.*
+TCLB_cluster/

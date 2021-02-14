@@ -132,9 +132,9 @@ if (Options$RT) {
 
 # actions
 if (Options$ferro){
-	ferro_stages = c(c("PsiSource", rep(c("MagPoisson12", "MagPoisson21"), 50),"MagPoisson12", "FinishMag"))
+	ferro_stages = c(c("PsiSource", rep(c("MagPoisson12", "MagPoisson21"), 100),"MagPoisson12", "FinishMag"))
 	AddAction("MagToSteadyState", c("CopyDistributions", ferro_stages))
-	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", rep(ferro_stages,10)))
+	AddAction("Iteration", c("BaseIter", "PhaseIter", "WallIter", rep(ferro_stages,20)))
 	AddAction("Init", c("PhaseInit", "WallInit", "WallIter", "BaseInit"))
 } else{
 	AddAction("Iteration", c("BaseIter", "PhaseIter","WallIter"))
