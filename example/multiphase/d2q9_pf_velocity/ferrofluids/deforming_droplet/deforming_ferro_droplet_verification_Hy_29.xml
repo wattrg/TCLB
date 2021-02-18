@@ -1,6 +1,6 @@
 
 <?xml version="1.0"?>
-<CLBConfig version="2.0" output="output/Hy_29/">
+<CLBConfig version="2.0" output="output/Hy_29_352/">
 <!-- 
 	Model:	d2q9_pf_velocity_ferro
         Verification case for ferrofluidic flows. This is
@@ -16,7 +16,7 @@
 -->
 	<Units>
 		<Param value="1.256637e-06N/A2" gauge="1"/>
-		<Param value="0.000625m" gauge="10"/>
+		<Param value="0.000454m" gauge="10"/>
 		<Param value="800kg/m3" gauge="1"/>
 		<Param value="0.00307kg/s2" gauge="0.001"/>
 	</Units>

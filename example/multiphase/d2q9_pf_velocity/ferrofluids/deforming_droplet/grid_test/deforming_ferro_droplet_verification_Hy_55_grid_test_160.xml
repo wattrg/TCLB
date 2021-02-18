@@ -1,6 +1,6 @@
 
 <?xml version="1.0"?>
-<CLBConfig version="2.0" output="output/Hy_37_352/">
+<CLBConfig version="2.0" output="output/grid_test/160/">
 <!-- 
 	Model:	d2q9_pf_velocity_ferro
         Verification case for ferrofluidic flows. This is
@@ -16,7 +16,7 @@
 -->
 	<Units>
 		<Param value="1.256637e-06N/A2" gauge="1"/>
-		<Param value="0.000454m" gauge="10"/>
+		<Param value="0.001m" gauge="10"/>
 		<Param value="800kg/m3" gauge="1"/>
 		<Param value="0.00307kg/s2" gauge="0.001"/>
 	</Units>
@@ -66,7 +66,7 @@
 	<Param name="mu_2" value = "3.200000" />
 	<Param name="mu_0" value = "1.000000"/>
 
-	<Param name="Hy_far" value="3700A/m"/>
+	<Param name="Hy_far" value="5500A/m"/>
 	<Param name="Hx_far" value="0.0000"/>
 
 	<Param name="relaxation" value="0.078"/>
@@ -82,7 +82,7 @@
 <Repeat Times="40">
 	<Repeat Times="1000"> 
 		<Container>
-			<Stop DiffBBelow="1e-3" Times="2" Iterations="100"/>
+			<Stop DiffBBelow="5e-5" Times="2" Iterations="100"/>
 			<RunAction name="MagToSteadyState" Iterations="1000000"/>
 		</Container>
 		<Container>
