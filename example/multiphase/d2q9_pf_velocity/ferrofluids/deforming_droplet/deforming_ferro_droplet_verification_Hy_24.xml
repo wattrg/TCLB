@@ -75,14 +75,14 @@
 </Model>
 <VTK />
 <Container>
-	<Stop DiffBBelow="1e-4" Times="1" Iterations="100"/>
+	<Stop DiffBBelow="5e-2" Times="1" Iterations="100"/>
 	<RunAction name="MagToSteadyState" Iterations="500000"/>
 </Container>
 <VTK/>
 <Repeat Times="10">
 	<Repeat Times="1000"> 
 		<Container>
-			<Stop DiffBBelow="1e-4" Times="1" Iterations="100"/>
+			<Stop DiffBBelow="5e-2" Times="1" Iterations="100"/>
 			<RunAction name="MagToSteadyState" Iterations="1000000"/>
 		</Container>
 		<Solve Iterations="1"/>
